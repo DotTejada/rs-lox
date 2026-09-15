@@ -1,12 +1,6 @@
-use crate::error::error;
 use std::{env, fs::read_to_string, io::{self, Write}};
 
-use crate::{error::Error, scanner::Scanner, token::Token};
-
-mod tokentype;
-mod token;
-mod scanner;
-mod error;
+use rs_lox::{error::{Error, error}, scanner::Scanner, token::Token};
 
 fn run(source: Vec<char>) -> Result<(), Error> {
     let mut scanner: Scanner = Scanner::new(source);

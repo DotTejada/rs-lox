@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use crate::{error::Error, token::{Literal, Token}, tokentype::TokenType};
 
-pub struct Scanner<'a> {
+pub struct Scanner {
     source: Vec<char>,
     tokens: Vec<Token>,
-    keywords: HashMap<&'a str, TokenType>,
+    keywords: HashMap<String, TokenType>,
     start: usize,
     current: usize,
     line: usize
@@ -23,12 +23,12 @@ fn is_alphanum(c: char) -> bool {
     return is_digit(c) || is_alpha(c);
 }
 
-impl Scanner<'_> {
+impl Scanner {
     pub fn new(source: Vec<char>) -> Self {
         Self {
             source: source,
             tokens: Vec::new(),
-            keywords: HashMap::from([
+            keywords: vec![
                 ("and",    TokenType::And),
                 ("class",  TokenType::Class),
                 ("else",   TokenType::Else),
@@ -45,7 +45,9 @@ impl Scanner<'_> {
                 ("true",   TokenType::True),
                 ("var",    TokenType::Var),
                 ("while",  TokenType::While),
-            ]),
+            ].into_iter()
+             .map(|(k, v)| (k.to_string(), v))
+             .collect(),
             start: 0,
             current: 0,
             line: 1

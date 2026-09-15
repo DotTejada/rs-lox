@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::tokentype::TokenType;
 
 #[derive(Debug, PartialEq)]
@@ -8,12 +10,28 @@ pub enum Literal {
     Identifier(String)
 }
 
+impl std::fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Literal::Str(s) => {
+                write!(f, "{}", s)
+            },
+            Literal::Number(n) => {
+                write!(f, "{}", n)
+            },
+            Literal::Identifier(s) => {
+                write!(f, "{}", s)
+            },
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    kind: TokenType,
-    lexeme: String,
-    literal: Option<Literal>,
-    line: usize
+    pub kind: TokenType,
+    pub lexeme: String,
+    pub literal: Option<Literal>,
+    pub line: usize
 }
 
 impl Token {
