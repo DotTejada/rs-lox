@@ -1,3 +1,4 @@
+use crate::error::error;
 use std::{env, fs::read_to_string, io::{self, Write}};
 
 use crate::{error::Error, scanner::Scanner, token::Token};
@@ -7,18 +8,9 @@ mod token;
 mod scanner;
 mod error;
 
-pub fn report(line: i32, pos: &str, message: &str) {
-    println!("[line {}] Error{}: {}", line, pos, message);
-    //had_error = true;
-}
-
-pub fn error(line: i32, message: &str) {
-    report(line, "", message);
-}
-
 fn run(source: Vec<char>) -> Result<(), Error> {
     let mut scanner: Scanner = Scanner::new(source);
-    let tokens: &Vec<Token> = scanner.scan_tokens();
+    let tokens: &Vec<Token> = scanner.scan_tokens()?;
 
     for token in tokens {
         println!("{:?}", token);
@@ -34,7 +26,7 @@ fn run_file(path: &String) {
             match run(source) {
                 Ok(()) => {},
                 Err(err) => {
-                    println!("{:?}", err);
+                    error(err);
                 }
             }
         },
@@ -61,11 +53,12 @@ fn run_prompt() {
                 break;
             },
         }
-        let char_vec: Vec<char> = line.chars().collect();
+        let char_vec: Vec<char> = line.trim().chars().collect();
         match run(char_vec) {
             Ok(()) => {},
             Err(err) => {
-                println!("{:?}", err);
+                //println!("{:?}", err);
+                error(err);
                 break;
             }
         }

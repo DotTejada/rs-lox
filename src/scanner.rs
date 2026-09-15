@@ -100,8 +100,7 @@ impl Scanner<'_> {
             self.advance();
         }
         if self.is_at_end() {
-            return Err(Error {what: "Unterminated string".to_string(), line: self.line});
-            //panic!("Unterminated string");
+            return Err(Error {what: "Unterminated string".to_string(), place: "".to_string(), line: self.line});
         }
         self.advance();
         let value = &self.source[self.start + 1..self.current - 1];
@@ -142,7 +141,7 @@ impl Scanner<'_> {
         }
     }
 
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), Error> {
         let c: char = self.advance();
         match c {
             '(' => { self.add_token(TokenType::LeftParen, None); },
@@ -191,19 +190,20 @@ impl Scanner<'_> {
                 } else if is_alpha(c) {
                     self.identifier();
                 } else {
-                    panic!("Unexpected character");
+                    return Err( Error {what: "Unexpected character".to_string(), place: "".to_string(), line: self.line} );
                 }
             },
         }
+        Ok(())
     }
 
-    pub fn scan_tokens(&mut self) -> &Vec<Token> {
+    pub fn scan_tokens(&mut self) -> Result<&Vec<Token>, Error> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            self.scan_token()?;
         }
         self.tokens.push(Token::new(TokenType::Eof, "".to_string(), None, self.line));
-        return &self.tokens;
+        return Ok(&self.tokens);
     }
 }
 
@@ -213,12 +213,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_math() {
+    fn test_math() -> Result<(), Error> {
         let source_string = String::from("a + b; b - c; c / d; d * e;");
         let source: Vec<char> = source_string.chars().collect();
         let mut scanner: Scanner = Scanner::new(source);
 
-        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let scanner_output: &Vec<Token> = scanner.scan_tokens()?;
         let expected_output: Vec<Token> = vec![
             Token::new( TokenType::Identifier, "a".to_string(), None, 1, ),
             Token::new( TokenType::Plus,       "+".to_string(), None, 1, ),
@@ -239,28 +239,30 @@ mod tests {
             Token::new( TokenType::Eof,        "".to_string(),  None, 1, ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        Ok(())
     }
 
     #[test]
-    fn test_comment() {
+    fn test_comment() -> Result<(), Error> {
         let source_string = String::from("// this is a comment");
         let source: Vec<char> = source_string.chars().collect();
         let mut scanner: Scanner = Scanner::new(source);
 
-        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let scanner_output: &Vec<Token> = scanner.scan_tokens()?;
         let expected_output: Vec<Token> = vec![
             Token::new( TokenType::Eof, "".to_string(), None, 1, ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        Ok(())
     }
 
     #[test]
-    fn test_string() {
+    fn test_string() -> Result<(), Error> {
         let source_string = String::from("var foo = \"hello\";");
         let source: Vec<char> = source_string.chars().collect();
         let mut scanner: Scanner = Scanner::new(source);
 
-        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let scanner_output: &Vec<Token> = scanner.scan_tokens()?;
         let expected_output: Vec<Token> = vec![
             Token::new( TokenType::Var, "var".to_string(), None, 1 ),
             Token::new( TokenType::Identifier, "foo".to_string(), None, 1 ),
@@ -270,15 +272,16 @@ mod tests {
             Token::new( TokenType::Eof, "".to_string(), None, 1 ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        Ok(())
     }
 
     #[test]
-    fn test_multichar_tokens() {
+    fn test_multichar_tokens() -> Result<(), Error> {
         let source_string = String::from("a <= b; b >= c; c != d; d == e;");
         let source: Vec<char> = source_string.chars().collect();
         let mut scanner: Scanner = Scanner::new(source);
 
-        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let scanner_output: &Vec<Token> = scanner.scan_tokens()?;
         let expected_output: Vec<Token> = vec![
             Token::new( TokenType::Identifier, "a".to_string(), None, 1 ),
             Token::new( TokenType::LessEqual, "<=".to_string(), None, 1 ),
@@ -299,15 +302,16 @@ mod tests {
             Token::new( TokenType::Eof, "".to_string(), None, 1 ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        Ok(())
     }
 
     #[test]
-    fn test_loop() {
+    fn test_loop() -> Result<(), Error> {
         let source_string = String::from("for (var a = 1; a < 10; a = a + 1) {\n  print a;\n}");
         let source: Vec<char> = source_string.chars().collect();
         let mut scanner: Scanner = Scanner::new(source);
 
-        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let scanner_output: &Vec<Token> = scanner.scan_tokens()?;
         let expected_output: Vec<Token> = vec![
             Token::new( TokenType::For,        "for".to_string(),   None, 1 ),
             Token::new( TokenType::LeftParen,  "(".to_string(),     None, 1 ),
@@ -334,5 +338,6 @@ mod tests {
             Token::new( TokenType::Eof,        "".to_string(),      None, 3 ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        Ok(())
     }
 }

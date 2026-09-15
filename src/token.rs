@@ -1,6 +1,7 @@
 use crate::tokentype::TokenType;
 
 #[derive(Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum Literal {
     Number(f64),
     Str(String),
@@ -25,7 +26,7 @@ impl Token {
         }
     }
 
-    fn to_string(&self) -> String {
-        format!("{:?} {} {:?}", self.kind, self.lexeme, self.literal)
-    }
+    //fn to_string(&self) -> String {
+    //    format!("{:?} {} {:?}", self.kind, self.lexeme, self.literal)
+    //}
 }
