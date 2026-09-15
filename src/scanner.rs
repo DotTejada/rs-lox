@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{token::{Literal, Token}, tokentype::TokenType};
+use crate::{error::Error, token::{Literal, Token}, tokentype::TokenType};
 
 pub struct Scanner<'a> {
     source: Vec<char>,
@@ -92,7 +92,7 @@ impl Scanner<'_> {
         return self.source[self.current + 1];
     }
 
-    fn string(&mut self) {
+    fn string(&mut self) -> Result<(), Error> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -100,12 +100,14 @@ impl Scanner<'_> {
             self.advance();
         }
         if self.is_at_end() {
-            panic!("Unterminated string");
+            return Err(Error {what: "Unterminated string".to_string(), line: self.line});
+            //panic!("Unterminated string");
         }
         self.advance();
         let value = &self.source[self.start + 1..self.current - 1];
         let value_str: String = value.iter().collect();
         self.add_token(TokenType::String, Some(Literal::Str(value_str)));
+        Ok(())
     }
 
     fn number(&mut self) {
@@ -182,7 +184,7 @@ impl Scanner<'_> {
             '\r' => {},
             '\t' => {},
             '\n' => { self.line += 1; },
-            '"' => { self.string(); },
+            '"' => { self.string()?; },
             _ => {
                 if is_digit(c) {
                     self.number();

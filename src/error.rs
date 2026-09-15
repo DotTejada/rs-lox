@@ -1,3 +1,8 @@
+#[derive(Debug)]
+pub struct Error {
+    pub what: String,
+    pub line: usize,
+}
 // pub fn report(&mut self, line: i32, pos: &str, message: &str) {
 //     println!("[line {}] Error{}: {}", line, pos, message);
 //     self.had_error = true;

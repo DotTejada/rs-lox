@@ -1,6 +1,6 @@
 use std::{env, fs::read_to_string, io::{self, Write}};
 
-use crate::{scanner::Scanner, token::Token};
+use crate::{error::Error, scanner::Scanner, token::Token};
 
 mod tokentype;
 mod token;
@@ -16,13 +16,14 @@ pub fn error(line: i32, message: &str) {
     report(line, "", message);
 }
 
-fn run(source: Vec<char>) {
+fn run(source: Vec<char>) -> Result<(), Error> {
     let mut scanner: Scanner = Scanner::new(source);
     let tokens: &Vec<Token> = scanner.scan_tokens();
 
     for token in tokens {
         println!("{:?}", token);
     }
+    Ok(())
 }
 
 fn run_file(path: &String) {
@@ -30,10 +31,12 @@ fn run_file(path: &String) {
     match contents {
         Ok(source_code) => {
             let source: Vec<char> = source_code.chars().collect();
-            run(source);
-            //if had_error {
-            //    return;
-            //}
+            match run(source) {
+                Ok(()) => {},
+                Err(err) => {
+                    println!("{:?}", err);
+                }
+            }
         },
         Err(err) => {
             println!("{:?}", err);
@@ -59,8 +62,13 @@ fn run_prompt() {
             },
         }
         let char_vec: Vec<char> = line.chars().collect();
-        run(char_vec);
-        //self.had_error = false;
+        match run(char_vec) {
+            Ok(()) => {},
+            Err(err) => {
+                println!("{:?}", err);
+                break;
+            }
+        }
         line.clear();
     }
 }
@@ -69,7 +77,6 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() > 2 {
         println!("Usage: jlox [script]");
-        return;
     } else if args.len() == 2 {
         run_file(&args[1]);
     } else {
