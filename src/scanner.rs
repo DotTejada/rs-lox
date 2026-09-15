@@ -204,3 +204,133 @@ impl Scanner<'_> {
         return &self.tokens;
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_math() {
+        let source_string = String::from("a + b; b - c; c / d; d * e;");
+        let source: Vec<char> = source_string.chars().collect();
+        let mut scanner: Scanner = Scanner::new(source);
+
+        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let expected_output: Vec<Token> = vec![
+            Token::new( TokenType::Identifier, "a".to_string(), None, 1, ),
+            Token::new( TokenType::Plus,       "+".to_string(), None, 1, ),
+            Token::new( TokenType::Identifier, "b".to_string(), None, 1, ),
+            Token::new( TokenType::Semicolon,  ";".to_string(), None, 1, ),
+            Token::new( TokenType::Identifier, "b".to_string(), None, 1, ),
+            Token::new( TokenType::Minus,      "-".to_string(), None, 1, ),
+            Token::new( TokenType::Identifier, "c".to_string(), None, 1, ),
+            Token::new( TokenType::Semicolon,  ";".to_string(), None, 1, ),
+            Token::new( TokenType::Identifier, "c".to_string(), None, 1, ),
+            Token::new( TokenType::Slash,      "/".to_string(), None, 1, ),
+            Token::new( TokenType::Identifier, "d".to_string(), None, 1, ),
+            Token::new( TokenType::Semicolon,  ";".to_string(), None, 1, ),
+            Token::new( TokenType::Identifier, "d".to_string(), None, 1, ),
+            Token::new( TokenType::Star,       "*".to_string(), None, 1, ),
+            Token::new( TokenType::Identifier, "e".to_string(), None, 1, ),
+            Token::new( TokenType::Semicolon,  ";".to_string(), None, 1, ),
+            Token::new( TokenType::Eof,        "".to_string(),  None, 1, ),
+        ];
+        assert_eq!(*scanner_output, expected_output);
+    }
+
+    #[test]
+    fn test_comment() {
+        let source_string = String::from("// this is a comment");
+        let source: Vec<char> = source_string.chars().collect();
+        let mut scanner: Scanner = Scanner::new(source);
+
+        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let expected_output: Vec<Token> = vec![
+            Token::new( TokenType::Eof, "".to_string(), None, 1, ),
+        ];
+        assert_eq!(*scanner_output, expected_output);
+    }
+
+    #[test]
+    fn test_string() {
+        let source_string = String::from("var foo = \"hello\";");
+        let source: Vec<char> = source_string.chars().collect();
+        let mut scanner: Scanner = Scanner::new(source);
+
+        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let expected_output: Vec<Token> = vec![
+            Token::new( TokenType::Var, "var".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "foo".to_string(), None, 1 ),
+            Token::new( TokenType::Equal, "=".to_string(), None, 1 ),
+            Token::new( TokenType::String, "\"hello\"".to_string(), Some(Literal::Str("hello".to_string())), 1 ),
+            Token::new( TokenType::Semicolon, ";".to_string(), None, 1 ),
+            Token::new( TokenType::Eof, "".to_string(), None, 1 ),
+        ];
+        assert_eq!(*scanner_output, expected_output);
+    }
+
+    #[test]
+    fn test_multichar_tokens() {
+        let source_string = String::from("a <= b; b >= c; c != d; d == e;");
+        let source: Vec<char> = source_string.chars().collect();
+        let mut scanner: Scanner = Scanner::new(source);
+
+        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let expected_output: Vec<Token> = vec![
+            Token::new( TokenType::Identifier, "a".to_string(), None, 1 ),
+            Token::new( TokenType::LessEqual, "<=".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "b".to_string(), None, 1 ),
+            Token::new( TokenType::Semicolon, ";".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "b".to_string(), None, 1 ),
+            Token::new( TokenType::GreaterEqual, ">=".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "c".to_string(), None, 1 ),
+            Token::new( TokenType::Semicolon, ";".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "c".to_string(), None, 1 ),
+            Token::new( TokenType::BangEqual, "!=".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "d".to_string(), None, 1 ),
+            Token::new( TokenType::Semicolon, ";".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "d".to_string(), None, 1 ),
+            Token::new( TokenType::EqualEqual, "==".to_string(), None, 1 ),
+            Token::new( TokenType::Identifier, "e".to_string(), None, 1 ),
+            Token::new( TokenType::Semicolon, ";".to_string(), None, 1 ),
+            Token::new( TokenType::Eof, "".to_string(), None, 1 ),
+        ];
+        assert_eq!(*scanner_output, expected_output);
+    }
+
+    #[test]
+    fn test_loop() {
+        let source_string = String::from("for (var a = 1; a < 10; a = a + 1) {\n  print a;\n}");
+        let source: Vec<char> = source_string.chars().collect();
+        let mut scanner: Scanner = Scanner::new(source);
+
+        let scanner_output: &Vec<Token> = scanner.scan_tokens();
+        let expected_output: Vec<Token> = vec![
+            Token::new( TokenType::For,        "for".to_string(),   None, 1 ),
+            Token::new( TokenType::LeftParen,  "(".to_string(),     None, 1 ),
+            Token::new( TokenType::Var,        "var".to_string(),   None, 1 ),
+            Token::new( TokenType::Identifier, "a".to_string(),     None, 1 ),
+            Token::new( TokenType::Equal,      "=".to_string(),     None, 1 ),
+            Token::new( TokenType::Number,     "1".to_string(),     Some(Literal::Number(1.0)), 1 ),
+            Token::new( TokenType::Semicolon,  ";".to_string(),     None, 1 ),
+            Token::new( TokenType::Identifier, "a".to_string(),     None, 1 ),
+            Token::new( TokenType::Less,       "<".to_string(),     None, 1 ),
+            Token::new( TokenType::Number,     "10".to_string(),    Some(Literal::Number(10.0)), 1 ),
+            Token::new( TokenType::Semicolon,  ";".to_string(),     None, 1 ),
+            Token::new( TokenType::Identifier, "a".to_string(),     None, 1 ),
+            Token::new( TokenType::Equal,      "=".to_string(),     None, 1 ),
+            Token::new( TokenType::Identifier, "a".to_string(),     None, 1 ),
+            Token::new( TokenType::Plus,       "+".to_string(),     None, 1 ),
+            Token::new( TokenType::Number,     "1".to_string(),     Some(Literal::Number(1.0)), 1 ),
+            Token::new( TokenType::RightParen, ")".to_string(),     None, 1 ),
+            Token::new( TokenType::LeftBrace,  "{".to_string(),     None, 1 ),
+            Token::new( TokenType::Print,      "print".to_string(), None, 2 ),
+            Token::new( TokenType::Identifier, "a".to_string(),     None, 2 ),
+            Token::new( TokenType::Semicolon,  ";".to_string(),     None, 2 ),
+            Token::new( TokenType::RightBrace, "}".to_string(),     None, 3 ),
+            Token::new( TokenType::Eof,        "".to_string(),      None, 3 ),
+        ];
+        assert_eq!(*scanner_output, expected_output);
+    }
+}
