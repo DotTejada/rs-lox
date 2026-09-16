@@ -6,7 +6,6 @@ use crate::tokentype::TokenType;
 pub enum Literal {
     Number(f64),
     Str(String),
-    Identifier(String),
     True,
     False,
     Nil
@@ -20,9 +19,6 @@ impl std::fmt::Display for Literal {
             },
             Literal::Str(s) => {
                 write!(f, "{}", s)
-            },
-            Literal::Identifier(i) => {
-                write!(f, "{}", i)
             },
             Literal::True => {
                 write!(f, "true")
