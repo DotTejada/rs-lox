@@ -1,4 +1,4 @@
-use crate::{error::{Error, ParseError, error_token}, expr::Expr, token::{Literal, Token}, tokentype::TokenType};
+use crate::{error::{ParseError, error_token}, expr::Expr, token::{Literal, Token}, tokentype::TokenType};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -43,15 +43,15 @@ impl Parser {
     }
 
     fn peek(&mut self) -> Token {
-        return self.tokens[self.current];
+        return self.tokens[self.current].clone();
     }
 
     fn previous(&mut self) -> Token {
-        return self.tokens[self.current - 1];
+        return self.tokens[self.current - 1].clone();
     }
 
     fn expression(&mut self) -> Result<Box<Expr>, ParseError> {
-        return self.equality()?;
+        return Ok(self.equality()?);
     }
 
     fn equality(&mut self) -> Result<Box<Expr>, ParseError> {
@@ -59,7 +59,7 @@ impl Parser {
         while self.match_token(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous();
             let right = self.comparison()?;
-            expr = Box::new(Expr::Binary{expr, operator, right});
+            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
         }
         return Ok(expr);
     }
@@ -69,7 +69,7 @@ impl Parser {
         while self.match_token(&[TokenType::Greater, TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
             let operator = self.previous();
             let right = self.term()?;
-            expr = Box::new(Expr::Binary{expr, operator, right});
+            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
         }
         return Ok(expr);
     }
@@ -79,7 +79,7 @@ impl Parser {
         while self.match_token(&[TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous();
             let right = self.factor()?;
-            expr = Box::new(Expr::Binary{expr, operator, right});
+            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
         }
         return Ok(expr);
     }
@@ -89,7 +89,7 @@ impl Parser {
         while self.match_token(&[TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
             let right = self.unary()?;
-            expr = Box::new(Expr::Binary{expr, operator, right});
+            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
         }
         return Ok(expr);
     }
@@ -98,31 +98,36 @@ impl Parser {
         if self.match_token(&[TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
             let right = self.unary()?;
-            return Box::new(Expr::Unary{operator, right});
+            return Ok(Box::new(Expr::Unary{operator: operator, right: right}));
         }
         return self.primary();
     }
 
     fn primary(&mut self) -> Result<Box<Expr>, ParseError> {
-        if self.match_token(&[TokenType::False]) { return Ok(Box::new(Expr::Literal(value: Some(Literal::Bool(false))))); }
-        if self.match_token(&[TokenType::True]) { return Ok(Box::new(Expr::Literal())); }
-        if self.match_token(&[TokenType::Nil]) { return Ok(Box::new(Expr::Literal())); }
+        if self.match_token(&[TokenType::False]) { return Ok(Box::new(Expr::Literal{value: Literal::False})); }
+        if self.match_token(&[TokenType::True]) { return Ok(Box::new(Expr::Literal{value: Literal::True})); }
+        if self.match_token(&[TokenType::Nil]) { return Ok(Box::new(Expr::Literal{value: Literal::Nil})); }
 
-        if self.match_token(&[TokenType::Number, TokenType::String]) { return Ok(Box::new(Expr::Literal())); }
+        if self.match_token(&[TokenType::Number, TokenType::String]) { return Ok(Box::new(Expr::Literal{value: self.previous().literal.unwrap() })); }
 
         if self.match_token(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
             self.consume(TokenType::RightParen, "Expect ')' after expression".to_string())?;
-            return Ok(Box::new(Expr::Grouping(expr)));
+            return Ok(Box::new(Expr::Grouping{expression: expr}));
         };
-        return Err( ParseError{token: self.peek(), message: "Unreachable".to_string()} );
+        return Err( ParseError{token: self.peek(), message: "Expect expression".to_string()} );
     }
 
     fn consume(&mut self, kind: TokenType, message: String) -> Result<Token, ParseError> {
-        if self.check(kind) {
+        if self.check(&kind) {
             return Ok(self.advance());
         }
         error_token(self.peek(), &message);
         return Err( ParseError{token: self.peek(), message: message} );
     }
+
+    pub fn parse(&mut self) -> Result<Box<Expr>, ParseError> {
+        return Ok(self.expression()?);
+    }
+
 }

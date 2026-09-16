@@ -1,14 +1,17 @@
 use std::{env, fs::read_to_string, io::{self, Write}};
 
-use rs_lox::{error::{Error, error}, scanner::Scanner, token::Token};
+use rs_lox::{error::{Error, error}, expr::AstPrinter, parser::Parser, scanner::Scanner, token::Token};
 
 fn run(source: Vec<char>) -> Result<(), Error> {
-    let mut scanner: Scanner = Scanner::new(source);
-    let tokens: &Vec<Token> = scanner.scan_tokens()?;
-
-    for token in tokens {
+    let scanner: Scanner = Scanner::new(source);
+    let tokens: Vec<Token> = scanner.scan_tokens()?;
+    for token in &tokens {
         println!("{:?}", token);
     }
+    let mut parser: Parser = Parser::new(tokens);
+    let expression = parser.parse();
+    println!("{}", AstPrinter{}.print(&*expression.unwrap()));
+
     Ok(())
 }
 

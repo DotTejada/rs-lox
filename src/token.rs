@@ -2,35 +2,42 @@ use std::fmt;
 
 use crate::tokentype::TokenType;
 
-#[derive(Debug, PartialEq)]
-#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Literal {
     Number(f64),
-    Bool(bool),
     Str(String),
-    Identifier(String)
+    Identifier(String),
+    True,
+    False,
+    Nil
 }
 
 impl std::fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Literal::Str(s) => {
-                write!(f, "{}", s)
-            },
-            Literal::Bool(b) => {
-                write!(f, "{}", b)
-            },
             Literal::Number(n) => {
                 write!(f, "{}", n)
             },
-            Literal::Identifier(s) => {
+            Literal::Str(s) => {
                 write!(f, "{}", s)
+            },
+            Literal::Identifier(i) => {
+                write!(f, "{}", i)
+            },
+            Literal::True => {
+                write!(f, "true")
+            },
+            Literal::False => {
+                write!(f, "false")
+            },
+            Literal::Nil => {
+                write!(f, "nil")
             },
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Token {
     pub kind: TokenType,
     pub lexeme: String,
