@@ -5,6 +5,7 @@ pub struct Parser {
     current: usize,
 }
 
+#[allow(dead_code)]
 impl Parser {
 
     pub fn new(tokens: Vec<Token>) -> Self {
@@ -126,8 +127,77 @@ impl Parser {
         return Err( ParseError{token: self.peek(), message: message} );
     }
 
-    pub fn parse(&mut self) -> Result<Box<Expr>, ParseError> {
-        return Ok(self.expression()?);
+    fn synchronize(&mut self) {
+        self.advance();
+        while !self.is_at_end() {
+            if self.previous().kind == TokenType::Semicolon {
+                return;
+            }
+            match self.peek().kind {
+                TokenType::Class => {},
+                TokenType::Fun => {},
+                TokenType::Var => {},
+                TokenType::For => {},
+                TokenType::If => {},
+                TokenType::While => {},
+                TokenType::Print => {},
+                TokenType::Return => {},
+                _ => { return; },
+            }
+            self.advance();
+        }
     }
 
+    pub fn parse(&mut self) -> Result<Box<Expr>, ParseError> {
+        self.expression()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::{expr::AstPrinter, scanner::Scanner};
+
+    #[test]
+    fn parse_unary() -> Result<(), Box<dyn std::error::Error>> {
+        let source_string = String::from("!true == -97 + 38");
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+
+        assert_eq!("(== (! true) (+ (- 97) 38))", AstPrinter{}.print(&*expression));
+        Ok(())
+    }
+
+    #[test]
+    fn parse_math() -> Result<(), Box<dyn std::error::Error>> {
+        let source_string = String::from("12 * 34 - 89 + 56 / 75 - 65 + 45 * 90");
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+
+        assert_eq!("(+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))", AstPrinter{}.print(&*expression));
+        Ok(())
+    }
+
+    #[test]
+    fn parse_logic() -> Result<(), Box<dyn std::error::Error>> {
+        let source_string = String::from("true != false == ( true == false )");
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+
+        assert_eq!("(== (!= true false) (group (== true false)))", AstPrinter{}.print(&*expression));
+        Ok(())
+    }
 }

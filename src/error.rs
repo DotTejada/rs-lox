@@ -1,7 +1,10 @@
+use core::fmt;
+use std::error::Error;
+
 use crate::{token::Token, tokentype::TokenType};
 
 #[derive(Debug)]
-pub struct Error {
+pub struct ScanError {
     pub what: String,
     pub place: String,
     pub line: usize,
@@ -14,12 +17,31 @@ pub struct ParseError {
     pub message: String,
 }
 
+impl std::fmt::Display for ScanError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[line {}] Error{}: {}", self.line, self.place, self.what)
+    }
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.token.kind == TokenType::Eof {
+            write!(f, "[line {}] Error at end: {}", self.token.line, self.message)
+        } else {
+            write!(f, "[line {}] Error at '{}': {}", self.token.line, self.token.lexeme, self.message)
+        }
+    }
+}
+
+impl Error for ScanError{}
+impl Error for ParseError{}
+
 pub fn report(line: usize, place: &str, what: &str) {
     println!("[line {}] Error{}: {}", line, place, what);
     //had_error = true;
 }
 
-pub fn error(err: Error) {
+pub fn error(err: ScanError) {
     println!("[line {}] Error: {}", err.line, err.what);
 }
 

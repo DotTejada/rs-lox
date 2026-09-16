@@ -1,16 +1,16 @@
 use std::{env, fs::read_to_string, io::{self, Write}};
 
-use rs_lox::{error::{Error, error}, expr::AstPrinter, parser::Parser, scanner::Scanner, token::Token};
+use rs_lox::{expr::AstPrinter, parser::Parser, scanner::Scanner, token::Token};
 
-fn run(source: Vec<char>) -> Result<(), Error> {
+fn run(source: Vec<char>) -> Result<(), Box<dyn std::error::Error>> {
     let scanner: Scanner = Scanner::new(source);
     let tokens: Vec<Token> = scanner.scan_tokens()?;
     for token in &tokens {
         println!("{:?}", token);
     }
     let mut parser: Parser = Parser::new(tokens);
-    let expression = parser.parse();
-    println!("{}", AstPrinter{}.print(&*expression.unwrap()));
+    let expression = parser.parse()?;
+    println!("{}", AstPrinter{}.print(&*expression));
 
     Ok(())
 }
@@ -23,7 +23,7 @@ fn run_file(path: &String) {
             match run(source) {
                 Ok(()) => {},
                 Err(err) => {
-                    error(err);
+                    println!("{}", err);
                 }
             }
         },
@@ -54,8 +54,7 @@ fn run_prompt() {
         match run(char_vec) {
             Ok(()) => {},
             Err(err) => {
-                //println!("{:?}", err);
-                error(err);
+                println!("{}", err);
                 break;
             }
         }

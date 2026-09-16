@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{error::Error, token::{Literal, Token}, tokentype::TokenType};
+use crate::{error::{ScanError}, token::{Literal, Token}, tokentype::TokenType};
 
 pub struct Scanner {
     source: Vec<char>,
@@ -94,7 +94,7 @@ impl Scanner {
         return self.source[self.current + 1];
     }
 
-    fn string(&mut self) -> Result<(), Error> {
+    fn string(&mut self) -> Result<(), ScanError> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -102,7 +102,7 @@ impl Scanner {
             self.advance();
         }
         if self.is_at_end() {
-            return Err(Error {what: "Unterminated string".to_string(), place: "".to_string(), line: self.line});
+            return Err( ScanError {what: "Unterminated string".to_string(), place: "".to_string(), line: self.line});
         }
         self.advance();
         let value = &self.source[self.start + 1..self.current - 1];
@@ -143,7 +143,7 @@ impl Scanner {
         }
     }
 
-    fn scan_token(&mut self) -> Result<(), Error> {
+    fn scan_token(&mut self) -> Result<(), ScanError> {
         let c: char = self.advance();
         match c {
             '(' => { self.add_token(TokenType::LeftParen, None); },
@@ -192,14 +192,14 @@ impl Scanner {
                 } else if is_alpha(c) {
                     self.identifier();
                 } else {
-                    return Err( Error {what: "Unexpected character".to_string(), place: "".to_string(), line: self.line} );
+                    return Err( ScanError {what: "Unexpected character".to_string(), place: "".to_string(), line: self.line} );
                 }
             },
         }
         Ok(())
     }
 
-    pub fn scan_tokens(mut self) -> Result<Vec<Token>, Error> {
+    pub fn scan_tokens(mut self) -> Result<Vec<Token>, ScanError> {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token()?;
@@ -215,7 +215,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_math() -> Result<(), Error> {
+    fn scan_math() -> Result<(), ScanError> {
         let source_string = String::from("a + b; b - c; c / d; d * e;");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -245,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn test_comment() -> Result<(), Error> {
+    fn scan_comment() -> Result<(), ScanError> {
         let source_string = String::from("// this is a comment");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -259,7 +259,7 @@ mod tests {
     }
 
     #[test]
-    fn test_string() -> Result<(), Error> {
+    fn scan_string() -> Result<(), ScanError> {
         let source_string = String::from("var foo = \"hello\";");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -278,7 +278,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multichar_tokens() -> Result<(), Error> {
+    fn scan_multichar_tokens() -> Result<(), ScanError> {
         let source_string = String::from("a <= b; b >= c; c != d; d == e;");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -308,7 +308,7 @@ mod tests {
     }
 
     #[test]
-    fn test_loop() -> Result<(), Error> {
+    fn scan_loop() -> Result<(), ScanError> {
         let source_string = String::from("for (var a = 1; a < 10; a = a + 1) {\n  print a;\n}");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
