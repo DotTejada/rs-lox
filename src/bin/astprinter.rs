@@ -1,23 +1,5 @@
 use rs_lox::{token::{Literal, Token}, tokentype::TokenType};
 
-pub enum Expr {
-    Binary {
-        left: Box<Expr>,
-        operator: Token,
-        right: Box<Expr>,
-    },
-    Grouping {
-        expression: Box<Expr>,
-    },
-    Literal {
-        value: Option<Literal>,
-    },
-    Unary {
-        operator: Token,
-        right: Box<Expr>,
-    },
-}
-
 impl Expr {
     fn accept(&self) -> String {
         match self {

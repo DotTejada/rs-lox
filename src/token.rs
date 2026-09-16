@@ -6,6 +6,7 @@ use crate::tokentype::TokenType;
 #[allow(dead_code)]
 pub enum Literal {
     Number(f64),
+    Bool(bool),
     Str(String),
     Identifier(String)
 }
@@ -15,6 +16,9 @@ impl std::fmt::Display for Literal {
         match self {
             Literal::Str(s) => {
                 write!(f, "{}", s)
+            },
+            Literal::Bool(b) => {
+                write!(f, "{}", b)
             },
             Literal::Number(n) => {
                 write!(f, "{}", n)
