@@ -33,10 +33,9 @@ pub struct Interpreter {}
 
 impl Interpreter {
 
-    pub fn interpret(&self, expression: Box<Expr>) -> Result<(), RuntimeError> {
+    pub fn interpret(&self, expression: Box<Expr>) -> Result<String, RuntimeError> {
         let value = self.evaluate(expression)?;
-        println!("{}", value);
-        Ok(())
+        Ok(format!("{}", value))
     }
 
     fn evaluate(&self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
@@ -164,5 +163,63 @@ impl Interpreter {
                 }
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::{parser::Parser, scanner::Scanner, token::Token};
+
+    #[test]
+    fn interpret_math() -> Result<(), Box<dyn std::error::Error>> {
+        let source_string = String::from("34.56 * 3 - 21 / 2 + 54.23 - 90");
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let interpreter: Interpreter = Interpreter{};
+
+        let resulting_val = interpreter.interpret(expression)?;
+
+        assert_eq!("57.41", resulting_val);
+        Ok(())
+    }
+
+    #[test]
+    fn interpret_eq() -> Result<(), Box<dyn std::error::Error>> {
+        let source_string = String::from("(42 + 5) == 47");
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let interpreter: Interpreter = Interpreter{};
+
+        let resulting_val = interpreter.interpret(expression)?;
+
+        assert_eq!("true", resulting_val);
+        Ok(())
+    }
+
+    #[test]
+    fn interpret_strconcat() -> Result<(), Box<dyn std::error::Error>> {
+        let source_string = String::from("\"hello\" + \" world\"");
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let interpreter: Interpreter = Interpreter{};
+
+        let resulting_val = interpreter.interpret(expression)?;
+
+        assert_eq!("hello world", resulting_val);
+        Ok(())
     }
 }

@@ -15,7 +15,7 @@ fn run(source: Vec<char>) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", AstPrinter{}.print(&*expression));
 
     let interpreter: Interpreter = Interpreter{};
-    interpreter.interpret(expression)?;
+    println!("{}", interpreter.interpret(expression)?);
 
     Ok(())
 }
