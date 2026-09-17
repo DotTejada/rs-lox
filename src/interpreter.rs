@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::{error::RuntimeError, expr::Expr, token::Literal, tokentype::TokenType};
+use crate::{error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum Value {
@@ -29,17 +29,31 @@ impl std::fmt::Display for Value {
     }
 }
 
-pub struct Interpreter {}
+pub struct Interpreter {
+    result: String
+}
 
 impl Interpreter {
 
-    pub fn interpret(&self, expression: Box<Expr>) -> Result<String, RuntimeError> {
-        let value = self.evaluate(expression)?;
-        Ok(format!("{}", value))
+    pub fn new() -> Self {
+        Self {
+            result: String::new()
+        }
+    }
+
+    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
+        for stmt in statements {
+            self.execute(stmt)?;
+        }
+        Ok(())
     }
 
     fn evaluate(&self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
         self.visit(expr)
+    }
+
+    fn execute(&mut self, stmt: Stmt) -> Result<(), RuntimeError> {
+        self.visit_stmt(stmt)
     }
 
     fn is_equal(&self, a: Value, b: Value) -> bool {
@@ -53,6 +67,20 @@ impl Interpreter {
             Value::Bool(b) => b,
             _ => true
         }
+    }
+
+    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), RuntimeError> {
+        match stmt {
+            Stmt::Expression {expression} => {
+                self.evaluate(expression)?;
+            },
+            Stmt::Print {expression} => {
+                let value = self.evaluate(expression)?;
+                self.result.push_str(&format!("{}", value));
+                println!("{}", value);
+            },
+        }
+        Ok(())
     }
 
     fn visit(&self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
@@ -174,52 +202,52 @@ mod tests {
 
     #[test]
     fn interpret_math() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("34.56 * 3 - 21 / 2 + 54.23 - 90");
+        let source_string = String::from("print 34.56 * 3 - 21 / 2 + 54.23 - 90;");
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
-        let interpreter: Interpreter = Interpreter{};
+        let mut interpreter: Interpreter = Interpreter::new();
 
-        let resulting_val = interpreter.interpret(expression)?;
+        interpreter.interpret(expression)?;
 
-        assert_eq!("57.41", resulting_val);
+        assert_eq!("57.41", interpreter.result);
         Ok(())
     }
 
     #[test]
     fn interpret_eq() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("(42 + 5) == 47");
+        let source_string = String::from("print (42 + 5) == 47;");
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
-        let interpreter: Interpreter = Interpreter{};
+        let mut interpreter: Interpreter = Interpreter::new();
 
-        let resulting_val = interpreter.interpret(expression)?;
+        interpreter.interpret(expression)?;
 
-        assert_eq!("true", resulting_val);
+        assert_eq!("true", interpreter.result);
         Ok(())
     }
 
     #[test]
     fn interpret_strconcat() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("\"hello\" + \" world\"");
+        let source_string = String::from("print \"hello\" + \" world\";");
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
-        let interpreter: Interpreter = Interpreter{};
+        let mut interpreter: Interpreter = Interpreter::new();
 
-        let resulting_val = interpreter.interpret(expression)?;
+        interpreter.interpret(expression)?;
 
-        assert_eq!("hello world", resulting_val);
+        assert_eq!("hello world", interpreter.result);
         Ok(())
     }
 }

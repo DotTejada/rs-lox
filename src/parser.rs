@@ -1,4 +1,4 @@
-use crate::{error::{ParseError, error_token}, expr::Expr, token::{Literal, Token}, tokentype::TokenType};
+use crate::{error::{ParseError, error_token}, expr::Expr, stmt::Stmt, token::{Literal, Token}, tokentype::TokenType};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -148,8 +148,31 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Box<Expr>, ParseError> {
-        self.expression()
+    fn expr_stmt(&mut self) -> Result<Stmt, ParseError> {
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.".to_string())?;
+        Ok(Stmt::Expression{expression: expr})
+    }
+
+    fn print_stmt(&mut self) -> Result<Stmt, ParseError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ';' after value.".to_string())?;
+        Ok(Stmt::Print{expression: value})
+    }
+
+    fn statement(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_token(&[TokenType::Print]) {
+            return self.print_stmt();
+        }
+        self.expr_stmt()
+    }
+
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
+        let mut statements: Vec<Stmt> = Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.statement()?);
+        }
+        Ok(statements)
     }
 }
 
@@ -161,43 +184,73 @@ mod tests {
 
     #[test]
     fn parse_unary() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("!true == -97 + 38");
+        let source_string = String::from("!true == -97 + 38;");
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
-        let expression = parser.parse()?;
+        let statements = parser.parse()?;
+        for stmt in statements {
+            let expr = match stmt {
+                Stmt::Expression {expression} => {
+                    expression
+                },
+                Stmt::Print {..} => {
+                    panic!("Statement is wrong kind");
+                },
+            };
+            assert_eq!("(== (! true) (+ (- 97) 38))", AstPrinter{}.print(&*expr));
+        }
 
-        assert_eq!("(== (! true) (+ (- 97) 38))", AstPrinter{}.print(&*expression));
         Ok(())
     }
 
     #[test]
     fn parse_math() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("12 * 34 - 89 + 56 / 75 - 65 + 45 * 90");
+        let source_string = String::from("12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;");
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
-        let expression = parser.parse()?;
+        let statements = parser.parse()?;
+        for stmt in statements {
+            let expr = match stmt {
+                Stmt::Expression {expression} => {
+                    expression
+                },
+                Stmt::Print {..} => {
+                    panic!("Statement is wrong kind");
+                },
+            };
+            assert_eq!("(+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))", AstPrinter{}.print(&*expr));
+        }
 
-        assert_eq!("(+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))", AstPrinter{}.print(&*expression));
         Ok(())
     }
 
     #[test]
     fn parse_logic() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("true != false == ( true == false )");
+        let source_string = String::from("true != false == ( true == false );");
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
-        let expression = parser.parse()?;
+        let statements = parser.parse()?;
+        for stmt in statements {
+            let expr = match stmt {
+                Stmt::Expression {expression} => {
+                    expression
+                },
+                Stmt::Print {..} => {
+                    panic!("Statement is wrong kind");
+                },
+            };
+            assert_eq!("(== (!= true false) (group (== true false)))", AstPrinter{}.print(&*expr));
+        }
 
-        assert_eq!("(== (!= true false) (group (== true false)))", AstPrinter{}.print(&*expression));
         Ok(())
     }
 }
