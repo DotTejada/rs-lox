@@ -10,17 +10,17 @@ pub struct ScanError {
     pub line: usize,
 }
 
+impl std::fmt::Display for ScanError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[line {}] Error{}: {}", self.line, self.place, self.what)
+    }
+}
+
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct ParseError {
     pub token: Token,
     pub message: String,
-}
-
-impl std::fmt::Display for ScanError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[line {}] Error{}: {}", self.line, self.place, self.what)
-    }
 }
 
 impl std::fmt::Display for ParseError {
@@ -33,8 +33,21 @@ impl std::fmt::Display for ParseError {
     }
 }
 
+#[derive(Debug)]
+pub struct RuntimeError {
+    pub token: Token,
+    pub message: String,
+}
+
+impl std::fmt::Display for RuntimeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}\n[line {}]", self.message, self.token.line)
+    }
+}
+
 impl Error for ScanError{}
 impl Error for ParseError{}
+impl Error for RuntimeError{}
 
 pub fn report(line: usize, place: &str, what: &str) {
     println!("[line {}] Error{}: {}", line, place, what);
