@@ -111,6 +111,10 @@ impl Parser {
 
         if self.match_token(&[TokenType::Number, TokenType::String]) { return Ok(Box::new(Expr::Literal{value: self.previous().literal.unwrap() })); }
 
+        if self.match_token(&[TokenType::Identifier]) {
+            return Ok(Box::new(Expr::Variable{name: self.previous()}));
+        }
+
         if self.match_token(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
             self.consume(TokenType::RightParen, "Expect ')' after expression".to_string())?;
@@ -167,10 +171,30 @@ impl Parser {
         self.expr_stmt()
     }
 
+    fn var_decl(&mut self) -> Result<Stmt, ParseError> {
+        let name = self.consume(TokenType::Identifier, "Expect variable name.".to_string())?;
+
+        let mut initializer: Option<Box<Expr>> = None;
+        if self.match_token(&[TokenType::Equal]) {
+            initializer = Some(self.expression()?);
+        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.".to_string())?;
+        Ok(Stmt::Var{name: name, initializer: initializer})
+    }
+
+    fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_token(&[TokenType::Var]) {
+            return self.var_decl();
+        }
+        self.statement()
+        //synchronize if got an error
+    }
+
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut statements: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.statement()?);
+            statements.push(self.declaration()?);
         }
         Ok(statements)
     }
@@ -196,7 +220,7 @@ mod tests {
                 Stmt::Expression {expression} => {
                     expression
                 },
-                Stmt::Print {..} => {
+                _ => {
                     panic!("Statement is wrong kind");
                 },
             };
@@ -220,7 +244,7 @@ mod tests {
                 Stmt::Expression {expression} => {
                     expression
                 },
-                Stmt::Print {..} => {
+                _ => {
                     panic!("Statement is wrong kind");
                 },
             };
@@ -244,7 +268,7 @@ mod tests {
                 Stmt::Expression {expression} => {
                     expression
                 },
-                Stmt::Print {..} => {
+                _ => {
                     panic!("Statement is wrong kind");
                 },
             };

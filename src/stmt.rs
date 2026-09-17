@@ -1,4 +1,4 @@
-use crate::expr::Expr;
+use crate::{expr::Expr, token::Token};
 
 pub enum Stmt {
     //Block {
@@ -29,10 +29,10 @@ pub enum Stmt {
     //    keyword: Token,
     //    value: Box<Expr>,
     //},
-    //Variable {
-    //    name: Token,
-    //    initializer: Box<Expr>,
-    //},
+    Var {
+        name: Token,
+        initializer: Option<Box<Expr>>,
+    },
     //While {
     //    condition: Box<Expr>,
     //    body: Box<Stmt>,

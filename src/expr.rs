@@ -46,9 +46,9 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
-    //Variable {
-    //    name: Token,
-    //},
+    Variable {
+        name: Token,
+    },
 }
 
 impl Expr {
@@ -66,6 +66,7 @@ impl Expr {
             Expr::Unary{operator, right} => {
                 return parenthesize(&operator.lexeme, &[right]);
             },
+            _ => "Not implemented".to_string()
         }
     }
 }

@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::{error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
+use crate::{environment::Environment, error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum Value {
@@ -30,14 +30,16 @@ impl std::fmt::Display for Value {
 }
 
 pub struct Interpreter {
-    result: String
+    result: String,
+    environment: Environment,
 }
 
 impl Interpreter {
 
     pub fn new() -> Self {
         Self {
-            result: String::new()
+            result: String::new(),
+            environment: Environment::new(),
         }
     }
 
@@ -48,7 +50,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
+    fn evaluate(&mut self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
         self.visit(expr)
     }
 
@@ -79,11 +81,22 @@ impl Interpreter {
                 self.result.push_str(&format!("{}", value));
                 println!("{}", value);
             },
+            Stmt::Var {name, initializer} => {
+                let value: Value = match initializer {
+                    Some(init) => {
+                        self.evaluate(init)?
+                    },
+                    None => {
+                        Value::Nil
+                    }
+                };
+                self.environment.define(name.lexeme, value);
+            },
         }
         Ok(())
     }
 
-    fn visit(&self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
+    fn visit(&mut self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
         match *expr {
             Expr::Binary{left, operator, right} => {
                 let l = self.evaluate(left)?;
@@ -189,6 +202,9 @@ impl Interpreter {
                         Err(RuntimeError{token: operator, message: "Unreachable".to_string()})
                     }
                 }
+            },
+            Expr::Variable{name} => {
+                self.environment.get(name)
             },
         }
     }
