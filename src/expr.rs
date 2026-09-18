@@ -1,10 +1,10 @@
 use crate::token::{Literal, Token};
 
 pub enum Expr {
-    //Assign {
-    //    name: Token,
-    //    value: Box<Expr>,
-    //},
+    Assign {
+        name: Token,
+        value: Box<Expr>,
+    },
     Binary {
         left: Box<Expr>,
         operator: Token,

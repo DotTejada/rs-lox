@@ -52,7 +52,24 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Box<Expr>, ParseError> {
-        return Ok(self.equality()?);
+        return Ok(self.assignment()?);
+    }
+
+    fn assignment(&mut self) -> Result<Box<Expr>, ParseError> {
+        let expr = self.equality()?;
+        if self.match_token(&[TokenType::Equal]) {
+            let equals = self.previous();
+            let value = self.assignment()?;
+            match *expr {
+                Expr::Variable{name} => {
+                    return Ok(Box::new(Expr::Assign{name: name, value: value}));
+                },
+                _ => {
+                    return Err(ParseError{token: equals, message: "Invalid assignment target.".to_string()});
+                }
+            }
+        }
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Box<Expr>, ParseError> {
@@ -164,9 +181,21 @@ impl Parser {
         Ok(Stmt::Print{expression: value})
     }
 
+    fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
+        let mut statements: Vec<Stmt> = Vec::new();
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            statements.push(self.declaration()?);
+        }
+        self.consume(TokenType::RightBrace, "Expect '}' after block.".to_string())?;
+        Ok(statements)
+    }
+
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.match_token(&[TokenType::Print]) {
             return self.print_stmt();
+        }
+        if self.match_token(&[TokenType::LeftBrace]) {
+            return Ok(Stmt::Block{statements: self.block()?});
         }
         self.expr_stmt()
     }

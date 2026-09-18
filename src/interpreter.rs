@@ -31,7 +31,7 @@ impl std::fmt::Display for Value {
 
 pub struct Interpreter {
     result: String,
-    environment: Environment,
+    environment: Box<Environment>,
 }
 
 impl Interpreter {
@@ -39,7 +39,7 @@ impl Interpreter {
     pub fn new() -> Self {
         Self {
             result: String::new(),
-            environment: Environment::new(),
+            environment: Box::new(Environment::new()),
         }
     }
 
@@ -56,6 +56,16 @@ impl Interpreter {
 
     fn execute(&mut self, stmt: Stmt) -> Result<(), RuntimeError> {
         self.visit_stmt(stmt)
+    }
+
+    fn execute_block(&mut self, statments: Vec<Stmt>, environment: Box<Environment>) -> Result<(), RuntimeError> {
+        let previous = std::mem::replace(&mut self.environment, environment);
+        //self.environment = environment;
+        for stmt in statments {
+            self.execute(stmt)?;
+        }
+        self.environment = previous;
+        Ok(())
     }
 
     fn is_equal(&self, a: Value, b: Value) -> bool {
@@ -91,6 +101,10 @@ impl Interpreter {
                     }
                 };
                 self.environment.define(name.lexeme, value);
+            },
+            Stmt::Block{statements} => {
+                let previous = std::mem::replace(&mut self.environment, Box::new(Environment::new()));
+                self.execute_block(statements, Box::new(Environment::from(previous)))?;
             },
         }
         Ok(())
@@ -205,6 +219,11 @@ impl Interpreter {
             },
             Expr::Variable{name} => {
                 self.environment.get(name)
+            },
+            Expr::Assign{name, value} => {
+                let value = self.evaluate(value)?;
+                self.environment.assign(name, value.clone())?;
+                Ok(value)
             },
         }
     }

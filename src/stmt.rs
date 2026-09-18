@@ -1,9 +1,9 @@
 use crate::{expr::Expr, token::Token};
 
 pub enum Stmt {
-    //Block {
-    //    expression: Vec<Box<Stmt>>,
-    //},
+    Block {
+        statements: Vec<Stmt>,
+    },
     //Class {
     //    name: Token,
     //    superclass: Box<Expr>,
@@ -15,7 +15,7 @@ pub enum Stmt {
     //Function {
     //    name: Token,
     //    params: Vec<Token>,
-    //    body: Vec<Box<Stmt>>,
+    //    body: Vec<Stmt>,
     //},
     //If {
     //    condition: Box<Expr>,
