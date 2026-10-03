@@ -1,9 +1,10 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
-
+use std::rc::Rc;
 use crate::{error::RuntimeError, interpreter::Value, token::Token};
 
 pub struct Environment {
-    enclosing: Option<Box<Environment>>,
+    enclosing: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, Value>,
 }
 
@@ -15,7 +16,7 @@ impl Environment {
         }
     }
 
-    pub fn from(environment: Box<Environment>) -> Self {
+    pub fn from(environment: Rc<RefCell<Environment>>) -> Self {
         Self {
             enclosing: Some(environment),
             values: HashMap::new()
@@ -33,7 +34,7 @@ impl Environment {
             },
             None => {
                 if let Some(e) = &self.enclosing {
-                    return e.get(name);
+                    return e.borrow().get(name);
                 }
                 Err(RuntimeError{token: name.clone(), message: format!("Undefined variable '{}'", &name.lexeme)})
             },
@@ -48,7 +49,7 @@ impl Environment {
             },
             None => {
                 if let Some(e) = self.enclosing.as_mut() {
-                    return e.assign(name, value);
+                    return e.borrow_mut().assign(name, value);
                 }
                 Err(RuntimeError{token: name.clone(), message: format!("Undefined variable '{}'", &name.lexeme)})
             },

@@ -1,5 +1,6 @@
 use core::fmt;
-
+use std::cell::RefCell;
+use std::rc::Rc;
 use crate::{environment::Environment, error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
@@ -10,7 +11,7 @@ pub enum Value {
     Nil,
 }
 
-impl std::fmt::Display for Value {
+impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Number(n) => {
@@ -31,7 +32,7 @@ impl std::fmt::Display for Value {
 
 pub struct Interpreter {
     result: String,
-    environment: Box<Environment>,
+    environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpreter {
@@ -39,7 +40,7 @@ impl Interpreter {
     pub fn new() -> Self {
         Self {
             result: String::new(),
-            environment: Box::new(Environment::new()),
+            environment: Rc::new(RefCell::new(Environment::new())),
         }
     }
 
@@ -58,14 +59,17 @@ impl Interpreter {
         self.visit_stmt(stmt)
     }
 
-    fn execute_block(&mut self, statments: Vec<Stmt>, environment: Box<Environment>) -> Result<(), RuntimeError> {
-        let previous = std::mem::replace(&mut self.environment, environment);
-        //self.environment = environment;
-        for stmt in statments {
-            self.execute(stmt)?;
-        }
+    fn execute_block(&mut self, statements: Vec<Stmt>, environment: Rc<RefCell<Environment>>) -> Result<(), RuntimeError> {
+        let previous = Rc::clone(&self.environment);
+        self.environment = environment;
+        let result: Result<(), RuntimeError> = (|| {
+            for stmt in statements {
+                self.execute(stmt)?;
+            }
+            Ok(())
+        })();
         self.environment = previous;
-        Ok(())
+        result
     }
 
     fn is_equal(&self, a: Value, b: Value) -> bool {
@@ -100,12 +104,18 @@ impl Interpreter {
                         Value::Nil
                     }
                 };
-                self.environment.define(name.lexeme, value);
+                self.environment.borrow_mut().define(name.lexeme, value);
             },
-            Stmt::Block{statements} => {
-                let previous = std::mem::replace(&mut self.environment, Box::new(Environment::new()));
-                self.execute_block(statements, Box::new(Environment::from(previous)))?;
-            },
+            //Stmt::Block{statements} => {
+            //    let previous = std::mem::replace(&mut self.environment, Box::new(Environment::new()));
+            //    self.execute_block(statements, Box::new(Environment::from(previous)))?;
+            //},
+            Stmt::Block { statements } => {
+                let environment = Rc::new(RefCell::new(
+                    Environment::from(Rc::clone(&self.environment))
+                ));
+                self.execute_block(statements, environment)?;
+            }
         }
         Ok(())
     }
@@ -218,11 +228,11 @@ impl Interpreter {
                 }
             },
             Expr::Variable{name} => {
-                self.environment.get(name)
+                self.environment.borrow().get(name)
             },
             Expr::Assign{name, value} => {
                 let value = self.evaluate(value)?;
-                self.environment.assign(name, value.clone())?;
+                self.environment.borrow_mut().assign(name, value.clone())?;
                 Ok(value)
             },
         }
