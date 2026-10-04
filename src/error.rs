@@ -10,7 +10,7 @@ pub struct ScanError {
     pub line: usize,
 }
 
-impl std::fmt::Display for ScanError {
+impl fmt::Display for ScanError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[line {}] Error{}: {}", self.line, self.place, self.what)
     }
@@ -23,7 +23,7 @@ pub struct ParseError {
     pub message: String,
 }
 
-impl std::fmt::Display for ParseError {
+impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.token.kind == TokenType::Eof {
             write!(f, "[line {}] Error at end: {}", self.token.line, self.message)
@@ -39,7 +39,7 @@ pub struct RuntimeError {
     pub message: String,
 }
 
-impl std::fmt::Display for RuntimeError {
+impl fmt::Display for RuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}\n[line {}]", self.message, self.token.line)
     }

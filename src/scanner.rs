@@ -12,21 +12,21 @@ pub struct Scanner {
 }
 
 fn is_digit(c: char) -> bool {
-    return c >= '0' && c <= '9';
+    c >= '0' && c <= '9'
 }
 
 fn is_alpha(c: char) -> bool {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
+    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
 }
 
 fn is_alphanum(c: char) -> bool {
-    return is_digit(c) || is_alpha(c);
+    is_digit(c) || is_alpha(c)
 }
 
 impl Scanner {
     pub fn new(source: Vec<char>) -> Self {
         Self {
-            source: source,
+            source,
             tokens: Vec::new(),
             keywords: vec![
                 ("and",    TokenType::And),
@@ -55,13 +55,13 @@ impl Scanner {
     }
 
     fn is_at_end(&self) -> bool {
-        return self.current >= self.source.len();
+        self.current >= self.source.len()
     }
 
     fn advance(&mut self) -> char {
         let c = self.source[self.current];
         self.current += 1;
-        return c;
+        c
     }
 
     fn add_token(&mut self, kind: TokenType, literal: Option<Literal>) {
@@ -77,21 +77,21 @@ impl Scanner {
     fn match_char(&mut self, expected: char) -> bool {
         if self.is_at_end() || self.source[self.current] != expected { return false; }
         self.current += 1;
-        return true;
+        true
     }
 
     fn peek(&self) -> char {
         if self.is_at_end() {
             return '\0';
         }
-        return self.source[self.current];
+        self.source[self.current]
     }
 
     fn peek_next(&self) -> char {
         if self.current + 1 >= self.source.len() {
             return '\0';
         }
-        return self.source[self.current + 1];
+        self.source[self.current + 1]
     }
 
     fn string(&mut self) -> Result<(), ScanError> {
