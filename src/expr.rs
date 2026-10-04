@@ -26,11 +26,11 @@ pub enum Expr {
     Literal {
         value: Literal,
     },
-    //Logical {
-    //    left: Box<Expr>,
-    //    operator: Token,
-    //    right: Box<Expr>,
-    //},
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
     //Set {
     //    object: Box<Expr>,
     //    name: Token,

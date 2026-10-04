@@ -10,20 +10,20 @@ pub enum Stmt {
     //    methods: Vec<Box<Stmt>>,
     //},
     Expression {
-        expression: Box<Expr>,
+        expression: Expr,
     },
     //Function {
     //    name: Token,
     //    params: Vec<Token>,
     //    body: Vec<Stmt>,
     //},
-    //If {
-    //    condition: Box<Expr>,
-    //    then_branch: Box<Stmt>,
-    //    else_branch: Box<Stmt>,
-    //},
+    If {
+        condition: Expr,
+        then_branch: Box<Stmt>,
+        else_branch: Option<Box<Stmt>>,
+    },
     Print {
-        expression: Box<Expr>,
+        expression: Expr,
     },
     //Return {
     //    keyword: Token,
@@ -31,10 +31,10 @@ pub enum Stmt {
     //},
     Var {
         name: Token,
-        initializer: Option<Box<Expr>>,
+        initializer: Option<Expr>,
     },
-    //While {
-    //    condition: Box<Expr>,
-    //    body: Box<Stmt>,
-    //},
+    While {
+        condition: Expr,
+        body: Box<Stmt>,
+    },
 }

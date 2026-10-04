@@ -30,6 +30,19 @@ impl fmt::Display for Value {
     }
 }
 
+fn is_equal(a: Value, b: Value) -> bool {
+    a == b
+    //return a.equals(b);
+}
+
+fn is_truthy(val: &Value) -> bool {
+    match val {
+        Value::Nil => false,
+        Value::Bool(b) => *b,
+        _ => true
+    }
+}
+
 pub struct Interpreter {
     pub result: String,
     environment: Rc<RefCell<Environment>>,
@@ -45,21 +58,21 @@ impl Interpreter {
     }
 
     pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), RuntimeError> {
-        for stmt in statements {
+        for stmt in &statements {
             self.execute(stmt)?;
         }
         Ok(())
     }
 
-    fn evaluate(&mut self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, RuntimeError> {
         self.visit(expr)
     }
 
-    fn execute(&mut self, stmt: Stmt) -> Result<(), RuntimeError> {
+    fn execute(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         self.visit_stmt(stmt)
     }
 
-    fn execute_block(&mut self, statements: Vec<Stmt>, environment: Rc<RefCell<Environment>>) -> Result<(), RuntimeError> {
+    fn execute_block(&mut self, statements: &Vec<Stmt>, environment: Rc<RefCell<Environment>>) -> Result<(), RuntimeError> {
         let previous = Rc::clone(&self.environment);
         self.environment = environment;
         let result: Result<(), RuntimeError> = (|| {
@@ -72,44 +85,39 @@ impl Interpreter {
         result
     }
 
-    fn is_equal(&self, a: Value, b: Value) -> bool {
-        a == b
-        //return a.equals(b);
-    }
-
-    fn is_truthy(&self, val: Value) -> bool {
-        match val {
-            Value::Nil => false,
-            Value::Bool(b) => b,
-            _ => true
-        }
-    }
-
-    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), RuntimeError> {
+    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
             Stmt::Expression {expression} => {
-                self.evaluate(expression)?;
+                self.evaluate(&expression)?;
+            },
+            Stmt::If {condition, then_branch, else_branch} => {
+                if is_truthy(&self.evaluate(&condition)?) {
+                    self.execute(then_branch)?;
+                } else if let Some(eb) = else_branch {
+                    self.execute(eb)?;
+                }
             },
             Stmt::Print {expression} => {
-                let value = self.evaluate(expression)?;
+                let value = self.evaluate(&expression)?;
                 self.result.push_str(&format!("{}\n", value));
                 print!("{}\n", value);
             },
             Stmt::Var {name, initializer} => {
                 let value: Value = match initializer {
                     Some(init) => {
-                        self.evaluate(init)?
+                        self.evaluate(&init)?
                     },
                     None => {
                         Value::Nil
                     }
                 };
-                self.environment.borrow_mut().define(name.lexeme, value);
+                self.environment.borrow_mut().define(name.lexeme.clone(), value);
             },
-            //Stmt::Block{statements} => {
-            //    let previous = std::mem::replace(&mut self.environment, Box::new(Environment::new()));
-            //    self.execute_block(statements, Box::new(Environment::from(previous)))?;
-            //},
+            Stmt::While {condition, body} => {
+                while is_truthy(&self.evaluate(&condition)?) {
+                    self.execute(body)?;
+                }
+            },
             Stmt::Block { statements } => {
                 let environment = Rc::new(RefCell::new(
                     Environment::from(Rc::clone(&self.environment))
@@ -120,11 +128,11 @@ impl Interpreter {
         Ok(())
     }
 
-    fn visit(&mut self, expr: Box<Expr>) -> Result<Value, RuntimeError> {
-        match *expr {
+    fn visit(&mut self, expr: &Expr) -> Result<Value, RuntimeError> {
+        match expr {
             Expr::Binary{left, operator, right} => {
-                let l = self.evaluate(left)?;
-                let r = self.evaluate(right)?;
+                let l = self.evaluate(&left)?;
+                let r = self.evaluate(&right)?;
                 match (&l, operator.kind, &r) {
                     (Value::Number(lhs), TokenType::Greater, Value::Number(rhs)) => {
                         Ok(Value::Bool(lhs > rhs))
@@ -139,10 +147,10 @@ impl Interpreter {
                         Ok(Value::Bool(lhs <= rhs))
                     },
                     (_, TokenType::BangEqual, _) => {
-                        Ok(Value::Bool(!self.is_equal(l, r)))
+                        Ok(Value::Bool(!is_equal(l, r)))
                     },
                     (_, TokenType::EqualEqual, _) => {
-                        Ok(Value::Bool(self.is_equal(l, r)))
+                        Ok(Value::Bool(is_equal(l, r)))
                     },
                     (Value::Number(lhs), TokenType::Minus, Value::Number(rhs)) => {
                         Ok(Value::Number(lhs - rhs))
@@ -154,7 +162,7 @@ impl Interpreter {
                         Ok(Value::Str(format!("{}{}", lhs, rhs)))
                     },
                     (_, TokenType::Plus, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be two numbers or two strings.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be two numbers or two strings.".to_string()})
                     },
                     (Value::Number(lhs), TokenType::Slash, Value::Number(rhs)) => {
                         Ok(Value::Number(lhs / rhs))
@@ -163,41 +171,41 @@ impl Interpreter {
                         Ok(Value::Number(lhs * rhs))
                     },
                     (_, TokenType::Greater, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be numbers.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be numbers.".to_string()})
                     },
                     (_, TokenType::GreaterEqual, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be numbers.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be numbers.".to_string()})
                     },
                     (_, TokenType::Less, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be numbers.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be numbers.".to_string()})
                     },
                     (_, TokenType::LessEqual, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be numbers.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be numbers.".to_string()})
                     },
                     (_, TokenType::Minus, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be numbers.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be numbers.".to_string()})
                     },
                     (_, TokenType::Slash, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be numbers.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be numbers.".to_string()})
                     },
                     (_, TokenType::Star, _) => {
-                        Err(RuntimeError{token: operator, message: "Operands must be numbers.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operands must be numbers.".to_string()})
                     },
                     _ => {
-                        Err(RuntimeError{token: operator, message: "Unreachable".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Unreachable".to_string()})
                     }
                 }
             },
             Expr::Grouping{expression} => {
-                self.evaluate(expression)
+                self.evaluate(&expression)
             },
             Expr::Literal{value} => {
                 match value {
                     Literal::Number(n) => {
-                        Ok(Value::Number(n))
+                        Ok(Value::Number(*n))
                     },
                     Literal::Str(s) => {
-                        Ok(Value::Str(s))
+                        Ok(Value::Str(s.clone()))
                     },
                     Literal::True => {
                         Ok(Value::Bool(true))
@@ -210,29 +218,42 @@ impl Interpreter {
                     },
                 }
             },
+            Expr::Logical {left, operator, right} => {
+                let left = self.evaluate(&left)?;
+                if operator.kind == TokenType::Or {
+                    if is_truthy(&left) {
+                        return Ok(left);
+                    }
+                } else {
+                    if !is_truthy(&left) {
+                        return Ok(left);
+                    }
+                }
+                self.evaluate(&right)
+            },
             Expr::Unary{operator, right} => {
-                let right = self.evaluate(right)?;
+                let right = self.evaluate(&right)?;
                 match (operator.kind, &right) {
                     (TokenType::Minus, Value::Number(rhs)) => {
                         Ok(Value::Number(-rhs))
                     },
                     (TokenType::Bang, _) => {
-                        Ok(Value::Bool(!self.is_truthy(right)))
+                        Ok(Value::Bool(!is_truthy(&right)))
                     },
                     (TokenType::Minus, _) => {
-                        Err(RuntimeError{token: operator, message: "Operand must be a number.".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Operand must be a number.".to_string()})
                     },
                     _ => {
-                        Err(RuntimeError{token: operator, message: "Unreachable".to_string()})
+                        Err(RuntimeError{token: operator.clone(), message: "Unreachable".to_string()})
                     }
                 }
             },
             Expr::Variable{name} => {
-                self.environment.borrow().get(name)
+                self.environment.borrow().get(name.clone())
             },
             Expr::Assign{name, value} => {
-                let value = self.evaluate(value)?;
-                self.environment.borrow_mut().assign(name, value.clone())?;
+                let value = self.evaluate(&value)?;
+                self.environment.borrow_mut().assign(name.clone(), value.clone())?;
                 Ok(value)
             },
         }
