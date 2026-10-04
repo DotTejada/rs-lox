@@ -1,0 +1,708 @@
+
+running 18 tests
+test environment::tests::env_first_second ... ok
+test environment::tests::env_redefinition ... ok
+test environment::tests::env_simple ... ok
+test expr::tests::ast_example ... ok
+test environment::tests::env_simple_enclosing ... ok
+test environment::tests::env_shadowing ... ok
+test expr::tests::ast_simple ... ok
+test interpreter::tests::interpret_math ... ok
+test interpreter::tests::interpret_eq ... ok
+test interpreter::tests::interpret_strconcat ... ok
+test parser::tests::parse_logic ... ok
+test parser::tests::parse_math ... ok
+test parser::tests::parse_unary ... ok
+test scanner::tests::scan_comment ... ok
+test scanner::tests::scan_loop ... ok
+test scanner::tests::scan_math ... ok
+test scanner::tests::scan_multichar_tokens ... ok
+test scanner::tests::scan_string ... ok
+
+successes:
+
+---- environment::tests::env_first_second stdout ----
+===== test: env_first_second =====
+[src/environment.rs:146:9]
+Input:
+{
+    var a = "first";
+    print a;
+}
+{
+    var b = "second";
+    print b;
+}
+=====
+Output:
+first
+second
+
+---- environment::tests::env_redefinition stdout ----
+===== test: env_redefinition =====
+[src/environment.rs:198:9]
+Input:
+var a = 1;
+a = 2;
+print a;
+=====
+Output:
+2
+
+---- environment::tests::env_simple stdout ----
+===== test: env_simple =====
+[src/environment.rs:175:9]
+Input:
+var a = 1;
+print a;
+=====
+Output:
+1
+
+---- expr::tests::ast_example stdout ----
+===== test: ast_example =====
+[src/expr.rs:118:9]
+Input:
+Binary {
+    left: Unary {
+        operator: Token {
+            kind: Minus,
+            lexeme: "-",
+            literal: None,
+            line: 1,
+        },
+        right: Literal {
+            value: Number(
+                123.0,
+            ),
+        },
+    },
+    operator: Token {
+        kind: Star,
+        lexeme: "*",
+        literal: None,
+        line: 1,
+    },
+    right: Grouping {
+        expression: Literal {
+            value: Number(
+                45.67,
+            ),
+        },
+    },
+}
+=====
+Output: (* (- 123) (group 45.67))
+
+---- environment::tests::env_simple_enclosing stdout ----
+===== test: env_simple_enclosing =====
+[src/environment.rs:119:9]
+Input:
+var global = "outside";
+{
+    var local = "inside";
+    print global + local;
+}
+=====
+Output:
+outsideinside
+
+---- environment::tests::env_shadowing stdout ----
+===== test: env_shadowing =====
+[src/environment.rs:68:9]
+Input:
+var a = "global a";
+var b = "global b";
+var c = "global c";
+{
+  var a = "outer a";
+  var b = "outer b";
+  {
+    var a = "inner a";
+    print a;
+    print b;
+    print c;
+  }
+  print a;
+  print b;
+  print c;
+}
+print a;
+print b;
+print c;
+=====
+Output:
+inner a
+outer b
+global c
+outer a
+outer b
+global c
+global a
+global b
+global c
+
+---- expr::tests::ast_simple stdout ----
+===== test: ast_simple =====
+[src/expr.rs:104:9]
+Input:
+Binary {
+    left: Literal {
+        value: Number(
+            1.0,
+        ),
+    },
+    operator: Token {
+        kind: Plus,
+        lexeme: "+",
+        literal: None,
+        line: 1,
+    },
+    right: Literal {
+        value: Number(
+            2.0,
+        ),
+    },
+}
+=====
+Output: (+ 1 2)
+
+---- interpreter::tests::interpret_math stdout ----
+===== test: interpret_math =====
+[src/interpreter.rs:251:9]
+Input:
+print 34.56 * 3 - 21 / 2 + 54.23 - 90;
+=====
+Output:
+57.41
+
+---- interpreter::tests::interpret_eq stdout ----
+===== test: interpret_eq =====
+[src/interpreter.rs:271:9]
+Input:
+print (42 + 5) == 47;
+=====
+Output:
+true
+
+---- interpreter::tests::interpret_strconcat stdout ----
+===== test: interpret_strconcat =====
+[src/interpreter.rs:291:9]
+Input:
+print "hello" + " world";
+=====
+Output:
+hello world
+
+---- parser::tests::parse_logic stdout ----
+===== test: parse_logic =====
+[src/parser.rs:297:9]
+Input:
+true != false == ( true == false );
+=====
+Output: (== (!= true false) (group (== true false)))
+
+---- parser::tests::parse_math stdout ----
+===== test: parse_math =====
+[src/parser.rs:269:9]
+Input:
+12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;
+=====
+Output: (+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))
+
+---- parser::tests::parse_unary stdout ----
+===== test: parse_unary =====
+[src/parser.rs:241:9]
+Input:
+!true == -97 + 38;
+=====
+Output: (== (! true) (+ (- 97) 38))
+
+---- scanner::tests::scan_comment stdout ----
+===== test: scan_comment =====
+[src/scanner.rs:253:9]
+Input:
+// this is a comment
+=====
+Output: [
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- scanner::tests::scan_loop stdout ----
+===== test: scan_loop =====
+[src/scanner.rs:325:9]
+Input:
+for (var a = 1; a < 10; a = a + 1) {
+  print a;
+}
+=====
+Output: [
+    Token {
+        kind: For,
+        lexeme: "for",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: LeftParen,
+        lexeme: "(",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Var,
+        lexeme: "var",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Equal,
+        lexeme: "=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Number,
+        lexeme: "1",
+        literal: Some(
+            Number(
+                1.0,
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Less,
+        lexeme: "<",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Number,
+        lexeme: "10",
+        literal: Some(
+            Number(
+                10.0,
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Equal,
+        lexeme: "=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Plus,
+        lexeme: "+",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Number,
+        lexeme: "1",
+        literal: Some(
+            Number(
+                1.0,
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: RightParen,
+        lexeme: ")",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: LeftBrace,
+        lexeme: "{",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Print,
+        lexeme: "print",
+        literal: None,
+        line: 2,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 2,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 2,
+    },
+    Token {
+        kind: RightBrace,
+        lexeme: "}",
+        literal: None,
+        line: 3,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 3,
+    },
+]
+
+---- scanner::tests::scan_math stdout ----
+===== test: scan_math =====
+[src/scanner.rs:220:9]
+Input:
+a + b; b - c; c / d; d * e;
+=====
+Output: [
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Plus,
+        lexeme: "+",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Minus,
+        lexeme: "-",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Star,
+        lexeme: "*",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "e",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- scanner::tests::scan_multichar_tokens stdout ----
+===== test: scan_multichar_tokens =====
+[src/scanner.rs:292:9]
+Input:
+a <= b; b >= c; c != d; d == e;
+=====
+Output: [
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: LessEqual,
+        lexeme: "<=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: GreaterEqual,
+        lexeme: ">=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: BangEqual,
+        lexeme: "!=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: EqualEqual,
+        lexeme: "==",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "e",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- scanner::tests::scan_string stdout ----
+===== test: scan_string =====
+[src/scanner.rs:270:9]
+Input:
+var foo = "hello";
+=====
+Output: [
+    Token {
+        kind: Var,
+        lexeme: "var",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "foo",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Equal,
+        lexeme: "=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: String,
+        lexeme: "\"hello\"",
+        literal: Some(
+            Str(
+                "hello",
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+
+successes:
+    environment::tests::env_first_second
+    environment::tests::env_redefinition
+    environment::tests::env_shadowing
+    environment::tests::env_simple
+    environment::tests::env_simple_enclosing
+    expr::tests::ast_example
+    expr::tests::ast_simple
+    interpreter::tests::interpret_eq
+    interpreter::tests::interpret_math
+    interpreter::tests::interpret_strconcat
+    parser::tests::parse_logic
+    parser::tests::parse_math
+    parser::tests::parse_unary
+    scanner::tests::scan_comment
+    scanner::tests::scan_loop
+    scanner::tests::scan_math
+    scanner::tests::scan_multichar_tokens
+    scanner::tests::scan_string
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+successes:
+
+successes:
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+successes:
+
+successes:
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

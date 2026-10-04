@@ -80,7 +80,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut lox = Lox::new();
     if args.len() > 2 {
-        println!("Usage: jlox [script]");
+        println!("Usage: cargo run [script]");
     } else if args.len() == 2 {
         lox.run_file(&args[1]);
     } else {
