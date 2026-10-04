@@ -216,6 +216,8 @@ mod tests {
 
     #[test]
     fn scan_math() -> Result<(), ScanError> {
+        println!("===== test: scan_math =====");
+        dbg!();
         let source_string = String::from("a + b; b - c; c / d; d * e;");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -241,11 +243,14 @@ mod tests {
             Token::new( TokenType::Eof,        "".to_string(),  None, 1, ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        println!("Input:\n{}\n=====\nOutput: {:#?}", source_string, expected_output);
         Ok(())
     }
 
     #[test]
     fn scan_comment() -> Result<(), ScanError> {
+        println!("===== test: scan_comment =====");
+        dbg!();
         let source_string = String::from("// this is a comment");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -255,11 +260,14 @@ mod tests {
             Token::new( TokenType::Eof, "".to_string(), None, 1, ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        println!("Input:\n{}\n=====\nOutput: {:#?}", source_string, expected_output);
         Ok(())
     }
 
     #[test]
     fn scan_string() -> Result<(), ScanError> {
+        println!("===== test: scan_string =====");
+        dbg!();
         let source_string = String::from("var foo = \"hello\";");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -274,11 +282,14 @@ mod tests {
             Token::new( TokenType::Eof, "".to_string(), None, 1 ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        println!("Input:\n{}\n=====\nOutput: {:#?}", source_string, expected_output);
         Ok(())
     }
 
     #[test]
     fn scan_multichar_tokens() -> Result<(), ScanError> {
+        println!("===== test: scan_multichar_tokens =====");
+        dbg!();
         let source_string = String::from("a <= b; b >= c; c != d; d == e;");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -304,11 +315,14 @@ mod tests {
             Token::new( TokenType::Eof, "".to_string(), None, 1 ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        println!("Input:\n{}\n=====\nOutput: {:#?}", source_string, expected_output);
         Ok(())
     }
 
     #[test]
     fn scan_loop() -> Result<(), ScanError> {
+        println!("===== test: scan_loop =====");
+        dbg!();
         let source_string = String::from("for (var a = 1; a < 10; a = a + 1) {\n  print a;\n}");
         let source: Vec<char> = source_string.chars().collect();
         let scanner: Scanner = Scanner::new(source);
@@ -340,6 +354,7 @@ mod tests {
             Token::new( TokenType::Eof,        "".to_string(),      None, 3 ),
         ];
         assert_eq!(*scanner_output, expected_output);
+        println!("Input:\n{}\n=====\nOutput: {:#?}", source_string, expected_output);
         Ok(())
     }
 }

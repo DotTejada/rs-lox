@@ -171,55 +171,57 @@ mod tests {
 
     use super::*;
     use crate::{parser::Parser, scanner::Scanner, token::Token};
-
     #[test]
     fn interpret_math() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("34.56 * 3 - 21 / 2 + 54.23 - 90");
+        println!("===== test: interpret_math =====");
+        dbg!();
+        let source_string = String::from("34.56 * 3 - 21 / 2 + 54.23 - 90;\n");
+        println!("Input:\n{}=====\nOutput:", source_string);
         let source: Vec<char> = source_string.chars().collect();
-        
+
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let interpreter: Interpreter = Interpreter{};
 
-        let resulting_val = interpreter.interpret(expression)?;
-
-        assert_eq!("57.41", resulting_val);
+        assert_eq!("57.41", interpreter.interpret(expression)?);
         Ok(())
     }
 
     #[test]
     fn interpret_eq() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("(42 + 5) == 47");
+        println!("===== test: interpret_eq =====");
+        dbg!();
+        let source_string = String::from("(42 + 5) == 47;\n");
+        println!("Input:\n{}=====\nOutput:", source_string);
         let source: Vec<char> = source_string.chars().collect();
-        
+
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let interpreter: Interpreter = Interpreter{};
 
-        let resulting_val = interpreter.interpret(expression)?;
-
-        assert_eq!("true", resulting_val);
+        assert_eq!("true", interpreter.interpret(expression)?);
         Ok(())
     }
 
     #[test]
     fn interpret_strconcat() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("\"hello\" + \" world\"");
+        println!("===== test: interpret_strconcat =====");
+        dbg!();
+        let source_string = String::from("\"hello\" + \" world\";\n");
+        println!("Input:\n{}=====\nOutput:", source_string);
         let source: Vec<char> = source_string.chars().collect();
-        
+
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let interpreter: Interpreter = Interpreter{};
 
-        let resulting_val = interpreter.interpret(expression)?;
-
-        assert_eq!("hello world", resulting_val);
+        assert_eq!("hello world", interpreter.interpret(expression)?);
         Ok(())
     }
 }

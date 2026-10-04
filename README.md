@@ -15,3 +15,7 @@ Running without a source file will start the REPL, which you can exit with CTRL+
 To run all tests:
 
     $ cargo test
+
+To see test output:
+
+    $ cargo test -- --show-output
