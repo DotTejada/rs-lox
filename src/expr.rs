@@ -1,5 +1,6 @@
 use crate::token::{Literal, Token};
 
+#[derive(Debug)]
 pub enum Expr {
     Assign {
         name: Token,
@@ -55,16 +56,16 @@ impl Expr {
     fn accept(&self) -> String {
         match self {
             Expr::Binary{left, operator, right} => {
-                return parenthesize(&operator.lexeme, &[left, right]);
+                parenthesize(&operator.lexeme, &[left, right])
             },
             Expr::Grouping{expression} => {
-                return parenthesize("group", &[expression]);
+                parenthesize("group", &[expression])
             },
             Expr::Literal{value} => {
-                return format!("{}", value);
+                format!("{}", value)
             },
             Expr::Unary{operator, right} => {
-                return parenthesize(&operator.lexeme, &[right]);
+                parenthesize(&operator.lexeme, &[right])
             },
             _ => "Not implemented".to_string()
         }
@@ -80,14 +81,14 @@ fn parenthesize(name: &str, exprs: &[&Box<Expr>]) -> String {
         builder.push_str(&expr.accept());
     }
     builder.push(')');
-    return builder;
+    builder
 }
 
 pub struct AstPrinter {}
 
 impl AstPrinter {
     pub fn print(&self, expr: &Expr) -> String {
-        return expr.accept();
+        expr.accept()
     }
 }
 
@@ -99,16 +100,22 @@ mod tests {
 
     #[test]
     fn ast_simple() {
+        println!("===== test: ast_simple =====");
+        dbg!();
         let expression: Box<Expr> = Box::new(Expr::Binary{
             left: Box::new(Expr::Literal{value: Literal::Number(1.0)}),
             operator: Token::new(TokenType::Plus, "+".to_string(), None, 1),
             right: Box::new(Expr::Literal{value: Literal::Number(2.0)}),
         });
-        assert_eq!("(+ 1 2)", AstPrinter{}.print(&*expression))
+        let expected = "(+ 1 2)";
+        println!("Input:\n{:#?}\n=====\nOutput: {}", expression, expected);
+        assert_eq!(expected, AstPrinter{}.print(&*expression))
     }
 
     #[test]
     fn ast_example() {
+        println!("===== test: ast_example =====");
+        dbg!();
         let expression: Box<Expr> = Box::new(Expr::Binary{
             left: Box::new(Expr::Unary{
                 operator: Token::new(TokenType::Minus, "-".to_string(), None, 1),
@@ -117,7 +124,8 @@ mod tests {
             operator: Token::new(TokenType::Star, "*".to_string(), None, 1),
             right: Box::new(Expr::Grouping{expression: Box::new(Expr::Literal{value: Literal::Number(45.67)})}),
         });
-        assert_eq!("(* (- 123) (group 45.67))", AstPrinter{}.print(&*expression))
+        let expected = "(* (- 123) (group 45.67))";
+        println!("Input:\n{:#?}\n=====\nOutput: {}", expression, expected);
+        assert_eq!(expected, AstPrinter{}.print(&*expression))
     }
-
 }

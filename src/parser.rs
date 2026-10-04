@@ -10,7 +10,7 @@ impl Parser {
 
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
-            tokens: tokens,
+            tokens,
             current: 0,
         }
     }
@@ -19,14 +19,14 @@ impl Parser {
         if !self.is_at_end() {
             self.current += 1;
         }
-        return self.previous();
+        self.previous()
     }
 
     fn check(&mut self, kind: &TokenType) -> bool {
         if self.is_at_end() {
             return false;
         }
-        return self.peek().kind == *kind;
+        self.peek().kind == *kind
     }
 
     fn match_token(&mut self, types: &[TokenType]) -> bool {
@@ -36,23 +36,23 @@ impl Parser {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     fn is_at_end(&mut self) -> bool {
-        return self.peek().kind == TokenType::Eof;
+        self.peek().kind == TokenType::Eof
     }
 
     fn peek(&mut self) -> Token {
-        return self.tokens[self.current].clone();
+        self.tokens[self.current].clone()
     }
 
     fn previous(&mut self) -> Token {
-        return self.tokens[self.current - 1].clone();
+        self.tokens[self.current - 1].clone()
     }
 
     fn expression(&mut self) -> Result<Box<Expr>, ParseError> {
-        return Ok(self.assignment()?);
+        Ok(self.assignment()?)
     }
 
     fn assignment(&mut self) -> Result<Box<Expr>, ParseError> {
@@ -60,12 +60,12 @@ impl Parser {
         if self.match_token(&[TokenType::Equal]) {
             let equals = self.previous();
             let value = self.assignment()?;
-            match *expr {
+            return match *expr {
                 Expr::Variable{name} => {
-                    return Ok(Box::new(Expr::Assign{name: name, value: value}));
+                    Ok(Box::new(Expr::Assign{name, value }))
                 },
                 _ => {
-                    return Err(ParseError{token: equals, message: "Invalid assignment target.".to_string()});
+                    Err(ParseError{token: equals, message: "Invalid assignment target.".to_string()})
                 }
             }
         }
@@ -77,9 +77,9 @@ impl Parser {
         while self.match_token(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous();
             let right = self.comparison()?;
-            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
+            expr = Box::new(Expr::Binary{left: expr, operator, right });
         }
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn comparison(&mut self) -> Result<Box<Expr>, ParseError> {
@@ -87,9 +87,9 @@ impl Parser {
         while self.match_token(&[TokenType::Greater, TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
             let operator = self.previous();
             let right = self.term()?;
-            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
+            expr = Box::new(Expr::Binary{left: expr, operator, right });
         }
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn term(&mut self) -> Result<Box<Expr>, ParseError> {
@@ -97,9 +97,9 @@ impl Parser {
         while self.match_token(&[TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous();
             let right = self.factor()?;
-            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
+            expr = Box::new(Expr::Binary{left: expr, operator, right });
         }
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn factor(&mut self) -> Result<Box<Expr>, ParseError> {
@@ -107,18 +107,18 @@ impl Parser {
         while self.match_token(&[TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
             let right = self.unary()?;
-            expr = Box::new(Expr::Binary{left: expr, operator: operator, right: right});
+            expr = Box::new(Expr::Binary{left: expr, operator, right });
         }
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn unary(&mut self) -> Result<Box<Expr>, ParseError> {
         if self.match_token(&[TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
             let right = self.unary()?;
-            return Ok(Box::new(Expr::Unary{operator: operator, right: right}));
+            return Ok(Box::new(Expr::Unary{operator, right }));
         }
-        return self.primary();
+        self.primary()
     }
 
     fn primary(&mut self) -> Result<Box<Expr>, ParseError> {
@@ -137,7 +137,7 @@ impl Parser {
             self.consume(TokenType::RightParen, "Expect ')' after expression".to_string())?;
             return Ok(Box::new(Expr::Grouping{expression: expr}));
         };
-        return Err( ParseError{token: self.peek(), message: "Expect expression".to_string()} );
+        Err( ParseError{token: self.peek(), message: "Expect expression".to_string()} )
     }
 
     fn consume(&mut self, kind: TokenType, message: String) -> Result<Token, ParseError> {
@@ -145,7 +145,7 @@ impl Parser {
             return Ok(self.advance());
         }
         error_token(self.peek(), &message);
-        return Err( ParseError{token: self.peek(), message: message} );
+        Err( ParseError{token: self.peek(), message } )
     }
 
     fn synchronize(&mut self) {
@@ -209,7 +209,7 @@ impl Parser {
         }
 
         self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.".to_string())?;
-        Ok(Stmt::Var{name: name, initializer: initializer})
+        Ok(Stmt::Var{name, initializer })
     }
 
     fn declaration(&mut self) -> Result<Stmt, ParseError> {
@@ -237,6 +237,8 @@ mod tests {
 
     #[test]
     fn parse_unary() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: parse_unary =====");
+        dbg!();
         let source_string = String::from("!true == -97 + 38;");
         let source: Vec<char> = source_string.chars().collect();
         
@@ -253,7 +255,9 @@ mod tests {
                     panic!("Statement is wrong kind");
                 },
             };
-            assert_eq!("(== (! true) (+ (- 97) 38))", AstPrinter{}.print(&*expr));
+            let expected = "(== (! true) (+ (- 97) 38))";
+            println!("Input:\n{}\n=====\nOutput: {}", source_string, expected);
+            assert_eq!(expected, AstPrinter{}.print(&*expr));
         }
 
         Ok(())
@@ -261,6 +265,8 @@ mod tests {
 
     #[test]
     fn parse_math() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: parse_math =====");
+        dbg!();
         let source_string = String::from("12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;");
         let source: Vec<char> = source_string.chars().collect();
         
@@ -277,7 +283,9 @@ mod tests {
                     panic!("Statement is wrong kind");
                 },
             };
-            assert_eq!("(+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))", AstPrinter{}.print(&*expr));
+            let expected = "(+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))";
+            println!("Input:\n{}\n=====\nOutput: {}", source_string, expected);
+            assert_eq!(expected, AstPrinter{}.print(&*expr));
         }
 
         Ok(())
@@ -285,6 +293,8 @@ mod tests {
 
     #[test]
     fn parse_logic() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: parse_logic =====");
+        dbg!();
         let source_string = String::from("true != false == ( true == false );");
         let source: Vec<char> = source_string.chars().collect();
         
@@ -301,7 +311,9 @@ mod tests {
                     panic!("Statement is wrong kind");
                 },
             };
-            assert_eq!("(== (!= true false) (group (== true false)))", AstPrinter{}.print(&*expr));
+            let expected = "(== (!= true false) (group (== true false)))";
+            println!("Input:\n{}\n=====\nOutput: {}", source_string, expected);
+            assert_eq!(expected, AstPrinter{}.print(&*expr));
         }
 
         Ok(())

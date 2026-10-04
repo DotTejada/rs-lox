@@ -33,7 +33,7 @@ impl std::fmt::Display for ParseError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct RuntimeError {
     pub token: Token,
     pub message: String,

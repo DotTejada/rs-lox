@@ -1,7 +1,7 @@
+use crate::{error::RuntimeError, interpreter::Value, token::Token};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use crate::{error::RuntimeError, interpreter::Value, token::Token};
 
 pub struct Environment {
     enclosing: Option<Rc<RefCell<Environment>>>,
@@ -51,8 +51,168 @@ impl Environment {
                 if let Some(e) = self.enclosing.as_mut() {
                     return e.borrow_mut().assign(name, value);
                 }
-                Err(RuntimeError{token: name.clone(), message: format!("Undefined variable '{}'", &name.lexeme)})
+                Err(RuntimeError { token: name.clone(), message: format!("Undefined variable '{}'", &name.lexeme) })
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::interpreter::Interpreter;
+    use crate::{parser::Parser, scanner::Scanner, token::Token};
+
+    #[test]
+    fn env_shadowing() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: env_shadowing =====");
+        dbg!();
+        let source_string = String::from(
+"var a = \"global a\";
+var b = \"global b\";
+var c = \"global c\";
+{
+  var a = \"outer a\";
+  var b = \"outer b\";
+  {
+    var a = \"inner a\";
+    print a;
+    print b;
+    print c;
+  }
+  print a;
+  print b;
+  print c;
+}
+print a;
+print b;
+print c;
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!(
+"inner a
+outer b
+global c
+outer a
+outer b
+global c
+global a
+global b
+global c
+"
+        , interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn env_simple_enclosing() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: env_simple_enclosing =====");
+        dbg!();
+        let source_string = String::from(
+"var global = \"outside\";
+{
+    var local = \"inside\";
+    print global + local;
+}
+"
+        );
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("outsideinside\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn env_first_second() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: env_first_second =====");
+        dbg!();
+        let source_string = String::from(
+"{
+    var a = \"first\";
+    print a;
+}
+{
+    var b = \"second\";
+    print b;
+}
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("first\nsecond\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn env_simple() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: env_simple =====");
+        dbg!();
+        let source_string = String::from(
+"var a = 1;
+print a;
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("1\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn env_redefinition() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: env_redefinition =====");
+        dbg!();
+        let source_string = String::from(
+            "var a = 1;
+a = 2;
+print a;
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("2\n", interpreter.result);
+        Ok(())
     }
 }

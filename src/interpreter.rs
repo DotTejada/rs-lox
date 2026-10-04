@@ -31,7 +31,7 @@ impl fmt::Display for Value {
 }
 
 pub struct Interpreter {
-    result: String,
+    pub result: String,
     environment: Rc<RefCell<Environment>>,
 }
 
@@ -92,8 +92,8 @@ impl Interpreter {
             },
             Stmt::Print {expression} => {
                 let value = self.evaluate(expression)?;
-                self.result.push_str(&format!("{}", value));
-                println!("{}", value);
+                self.result.push_str(&format!("{}\n", value));
+                print!("{}\n", value);
             },
             Stmt::Var {name, initializer} => {
                 let value: Value = match initializer {
@@ -247,7 +247,10 @@ mod tests {
 
     #[test]
     fn interpret_math() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("print 34.56 * 3 - 21 / 2 + 54.23 - 90;");
+        println!("===== test: interpret_math =====");
+        dbg!();
+        let source_string = String::from("print 34.56 * 3 - 21 / 2 + 54.23 - 90;\n");
+        println!("Input:\n{}=====\nOutput:", source_string);
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
@@ -258,13 +261,16 @@ mod tests {
 
         interpreter.interpret(expression)?;
 
-        assert_eq!("57.41", interpreter.result);
+        assert_eq!("57.41\n", interpreter.result);
         Ok(())
     }
 
     #[test]
     fn interpret_eq() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("print (42 + 5) == 47;");
+        println!("===== test: interpret_eq =====");
+        dbg!();
+        let source_string = String::from("print (42 + 5) == 47;\n");
+        println!("Input:\n{}=====\nOutput:", source_string);
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
@@ -275,13 +281,16 @@ mod tests {
 
         interpreter.interpret(expression)?;
 
-        assert_eq!("true", interpreter.result);
+        assert_eq!("true\n", interpreter.result);
         Ok(())
     }
 
     #[test]
     fn interpret_strconcat() -> Result<(), Box<dyn std::error::Error>> {
-        let source_string = String::from("print \"hello\" + \" world\";");
+        println!("===== test: interpret_strconcat =====");
+        dbg!();
+        let source_string = String::from("print \"hello\" + \" world\";\n");
+        println!("Input:\n{}=====\nOutput:", source_string);
         let source: Vec<char> = source_string.chars().collect();
         
         let scanner: Scanner = Scanner::new(source);
@@ -292,7 +301,7 @@ mod tests {
 
         interpreter.interpret(expression)?;
 
-        assert_eq!("hello world", interpreter.result);
+        assert_eq!("hello world\n", interpreter.result);
         Ok(())
     }
 }
