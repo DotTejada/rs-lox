@@ -1,16 +1,19 @@
+use core::fmt;
+use std::error::Error;
+
 #[derive(Debug)]
-#[allow(dead_code)]
-pub struct Error {
+pub struct ScanError {
     pub what: String,
     pub place: String,
     pub line: usize,
 }
+impl fmt::Display for ScanError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[line {}] Error{}: {}", self.line, self.place, self.what)
+    }
+}
+impl Error for ScanError{}
 
-//pub fn report(err: Error) {
-//    println!("[line {}] Error{}: {}", err.line, err.place, err.what);
-//    //had_error = true;
-//}
-
-pub fn error(err: Error) {
+pub fn error(err: ScanError) {
     println!("[line {}] Error: {}", err.line, err.what);
 }

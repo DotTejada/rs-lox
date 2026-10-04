@@ -10,19 +10,19 @@ pub enum Literal {
 
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    kind: TokenType,
-    lexeme: String,
-    literal: Option<Literal>,
-    line: usize
+    pub kind: TokenType,
+    pub lexeme: String,
+    pub literal: Option<Literal>,
+    pub line: usize
 }
 
 impl Token {
     pub fn new(kind: TokenType, lexeme: String, literal: Option<Literal>, line: usize) -> Self {
         Self {
-            kind: kind,
-            lexeme: lexeme,
-            literal: literal,
-            line: line,
+            kind,
+            lexeme,
+            literal,
+            line,
         }
     }
 
