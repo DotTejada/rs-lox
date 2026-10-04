@@ -18,7 +18,7 @@ Make sure you have Rust and Cargo installed.
 
 Run with:
 
-    $ cargo run [source-file]
+    $ cargo run --bin rs-lox [source-file]
 
 Running without a source file will start the REPL, which you can exit with CTRL+D.
 
