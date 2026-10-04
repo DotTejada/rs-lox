@@ -161,42 +161,54 @@ mod tests {
 
     #[test]
     fn parse_unary() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: parse_unary =====");
+        dbg!();
         let source_string = String::from("!true == -97 + 38");
         let source: Vec<char> = source_string.chars().collect();
-        
+
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
 
+        let expected = "(== (! true) (+ (- 97) 38))";
+        println!("Input:\n{}\n=====\nOutput: {}", source_string, expected);
         assert_eq!("(== (! true) (+ (- 97) 38))", AstPrinter{}.print(&*expression));
         Ok(())
     }
 
     #[test]
     fn parse_math() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: parse_math =====");
+        dbg!();
         let source_string = String::from("12 * 34 - 89 + 56 / 75 - 65 + 45 * 90");
         let source: Vec<char> = source_string.chars().collect();
-        
+
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
 
+        let expected = "(+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))";
+        println!("Input:\n{}\n=====\nOutput: {}", source_string, expected);
         assert_eq!("(+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))", AstPrinter{}.print(&*expression));
         Ok(())
     }
 
     #[test]
     fn parse_logic() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: parse_logic =====");
+        dbg!();
         let source_string = String::from("true != false == ( true == false )");
         let source: Vec<char> = source_string.chars().collect();
-        
+
         let scanner: Scanner = Scanner::new(source);
         let tokens: Vec<Token> = scanner.scan_tokens()?;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
 
+        let expected = "(== (!= true false) (group (== true false)))";
+        println!("Input:\n{}\n=====\nOutput: {}", source_string, expected);
         assert_eq!("(== (!= true false) (group (== true false)))", AstPrinter{}.print(&*expression));
         Ok(())
     }
