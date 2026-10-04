@@ -1,5 +1,6 @@
 use rs_lox::{token::{Literal, Token}, tokentype::TokenType};
 
+#[derive(Debug)]
 pub enum Expr {
     Binary {
         left: Box<Expr>,
@@ -64,24 +65,29 @@ impl AstPrinter {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
 
     #[test]
-    fn test_simple_ast() {
+    fn ast_simple() {
+        println!("===== test: ast_simple =====");
+        dbg!();
         let expression: Box<Expr> = Box::new(Expr::Binary{
             left: Box::new(Expr::Literal{value: Some(Literal::Number(1.0))}),
             operator: Token::new(TokenType::Plus, "+".to_string(), None, 1),
             right: Box::new(Expr::Literal{value: Some(Literal::Number(2.0))}),
         });
-        assert_eq!("(+ 1 2)", AstPrinter{}.print(&*expression))
+        let expected = "(+ 1 2)";
+        println!("Input:\n{:#?}\n=====\nOutput: {}", expression, expected);
+        assert_eq!(expected, AstPrinter{}.print(&*expression))
     }
 
     #[test]
-    fn test_example_ast() {
+    fn ast_example() {
+        println!("===== test: ast_example =====");
+        dbg!();
         let expression: Box<Expr> = Box::new(Expr::Binary{
             left: Box::new(Expr::Unary{
                 operator: Token::new(TokenType::Minus, "-".to_string(), None, 1),
@@ -90,9 +96,10 @@ mod tests {
             operator: Token::new(TokenType::Star, "*".to_string(), None, 1),
             right: Box::new(Expr::Grouping{expression: Box::new(Expr::Literal{value: Some(Literal::Number(45.67))})}),
         });
-        assert_eq!("(* (- 123) (group 45.67))", AstPrinter{}.print(&*expression))
+        let expected = "(* (- 123) (group 45.67))";
+        println!("Input:\n{:#?}\n=====\nOutput: {}", expression, expected);
+        assert_eq!(expected, AstPrinter{}.print(&*expression))
     }
-
 }
 
 fn main() {

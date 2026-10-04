@@ -19,3 +19,7 @@ For chapter 5 ast printer run:
 To run all tests:
 
     $ cargo test
+
+To see output from tests:
+
+    $ cargo test -- --show-output

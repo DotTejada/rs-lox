@@ -1,10 +1,10 @@
 use std::{env, fs::read_to_string, io::{self, Write}};
 
-use rs_lox::{error::{Error, error}, scanner::Scanner, token::Token};
+use rs_lox::{error::{ScanError, error}, scanner::Scanner, token::Token};
 
-fn run(source: Vec<char>) -> Result<(), Error> {
-    let mut scanner: Scanner = Scanner::new(source);
-    let tokens: &Vec<Token> = scanner.scan_tokens()?;
+fn run(source: Vec<char>) -> Result<(), ScanError> {
+    let scanner: Scanner = Scanner::new(source);
+    let tokens: Vec<Token> = scanner.scan_tokens()?;
 
     for token in tokens {
         println!("{:?}", token);
@@ -63,7 +63,7 @@ fn run_prompt() {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() > 2 {
-        println!("Usage: jlox [script]");
+        println!("Usage: cargo run [script]");
     } else if args.len() == 2 {
         run_file(&args[1]);
     } else {
