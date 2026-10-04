@@ -325,4 +325,147 @@ mod tests {
         assert_eq!("hello world\n", interpreter.result);
         Ok(())
     }
+
+    #[test]
+    fn interpret_fib() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: interpret_fib =====");
+        dbg!();
+        let source_string = String::from(
+"var a = 0;
+var temp;
+for (var b = 1; a < 10000; b = temp + b) {
+    print a;
+    temp = a;
+    a = b;
+}
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!(
+"0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+6765
+"
+       , interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn interpret_while() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: interpret_while =====");
+        dbg!();
+        let source_string = String::from(
+"{
+    var i = 0;
+    while (i < 10) {
+        print i;
+        i = i + 1;
+    }
+}
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!(
+"0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+"
+            , interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn interpret_cstylefor() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: interpret_cstylefor =====");
+        dbg!();
+        let source_string = String::from("for (var i = 0; i < 10; i = i + 1) print i;");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!(
+"0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+"
+            , interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn interpret_truthiness() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: interpret_cstylefor =====");
+        dbg!();
+        let source_string = String::from("print \"hi\" or 2;\nprint nil or \"yes\";\n");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("hi\nyes\n", interpreter.result);
+        Ok(())
+    }
 }
