@@ -1,4 +1,5 @@
 use crate::{error::{ParseError, error_token}, expr::Expr, stmt::Stmt, token::{Literal, Token}, tokentype::TokenType};
+use crate::error::error;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -138,10 +139,38 @@ impl Parser {
             let right = self.unary()?;
             return Ok(Expr::Unary{operator, right: Box::new(right) });
         }
-        self.primary()
+        self.call()
     }
 
-    fn primary(&mut self) -> Result<Expr, ParseError> {
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
+        let mut arguments: Vec<Expr> = Vec::new();
+        if !self.check(&TokenType::RightParen) {
+            loop {
+                if arguments.len() >= 255 {
+                    error_token(self.peek(), "Can't have more than 255 arguments.");
+                }
+                arguments.push(self.expression()?);
+                if !self.match_token(&[TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        let paren = self.consume(TokenType::RightParen, "Expect ')' after arguments.".to_string())?;
+        Ok(Expr::Call{callee: Box::new(callee), paren, arguments})
+    }
+    fn call(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.primary()?;
+        loop {
+            if self.match_token(&[TokenType::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+        Ok(expr)
+    }
+
+fn primary(&mut self) -> Result<Expr, ParseError> {
         if self.match_token(&[TokenType::False]) { return Ok(Expr::Literal{value: Literal::False}); }
         if self.match_token(&[TokenType::True]) { return Ok(Expr::Literal{value: Literal::True}); }
         if self.match_token(&[TokenType::Nil]) { return Ok(Expr::Literal{value: Literal::Nil}); }

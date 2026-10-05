@@ -1,6 +1,8 @@
 use core::fmt;
 use std::cell::RefCell;
+use std::fmt::Arguments;
 use std::rc::Rc;
+use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{environment::Environment, error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
 #[derive(PartialEq, PartialOrd, Debug, Clone)]
@@ -8,6 +10,7 @@ pub enum Value {
     Number(f64),
     Str(String),
     Bool(bool),
+    Fn(NativeFunction),
     Nil,
 }
 
@@ -22,6 +25,9 @@ impl fmt::Display for Value {
             },
             Value::Bool(b) => {
                 write!(f, "{}", b)
+            },
+            Value::Fn(native_fn) => {
+                write!(f, "{}", native_fn)
             },
             Value::Nil => {
                 write!(f, "nil")
@@ -43,17 +49,59 @@ fn is_truthy(val: &Value) -> bool {
     }
 }
 
+#[derive(Clone, PartialEq, PartialOrd)]
+struct NativeFunction{
+    arity: usize,
+    call_fn: fn(&mut Interpreter, &[Value]) -> Result<Value, RuntimeError>
+}
+
+impl fmt::Debug for NativeFunction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<native fn>")
+    }
+}
+impl fmt::Display for NativeFunction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<native fn>")
+    }
+}
+
+trait Callable {
+    fn arity(&self) -> usize;
+    fn call(&self, interpreter: &mut Interpreter, arguments: &[Value]) -> Result<Value, RuntimeError>;
+}
+
+impl Callable for NativeFunction {
+    fn arity(&self) -> usize { self.arity }
+    fn call(&self, interpreter: &mut Interpreter, arguments: &[Value]) -> Result<Value, RuntimeError> {
+        (self.call_fn)(interpreter, arguments)
+    }
+}
+
 pub struct Interpreter {
     pub result: String,
+    globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpreter {
 
     pub fn new() -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new()));
+        globals.borrow_mut().define("clock".to_string(), Value::Fn(
+            NativeFunction{
+                arity: 0,
+                call_fn: |_, _|
+                    Ok(Value::Number(SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Time went backwards")
+                        .as_secs() as f64))
+            })
+        );
         Self {
             result: String::new(),
-            environment: Rc::new(RefCell::new(Environment::new())),
+            globals: globals.clone(),
+            environment: globals,
         }
     }
 
@@ -193,6 +241,25 @@ impl Interpreter {
                     },
                     _ => {
                         Err(RuntimeError{token: operator.clone(), message: "Unreachable".to_string()})
+                    }
+                }
+            },
+            Expr::Call{callee, paren, arguments} => {
+                let callee = self.evaluate(&callee)?;
+                let mut args: Vec<Value> = Vec::new();
+                for argument in arguments {
+                    args.push(self.evaluate(argument)?);
+                }
+                let function = callee;
+                match function{
+                    Value::Fn(native_fn) => {
+                        if arguments.len() != native_fn.arity() {
+                            return Err(RuntimeError{token: paren.clone(), message: format!("Expected {} arguments but got {}.", function.arity(), arguments.len())})
+                        }
+                        native_fn.call(interpreter, &args)
+                    },
+                    _ => {
+                        Err(RuntimeError{token: paren.clone(), message: "Can only call functions and classes.".to_string()})
                     }
                 }
             },
