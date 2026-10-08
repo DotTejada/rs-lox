@@ -1,5 +1,4 @@
 use crate::{error::{ParseError, error_token}, expr::Expr, stmt::Stmt, token::{Literal, Token}, tokentype::TokenType};
-use crate::error::error;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -224,6 +223,27 @@ fn primary(&mut self) -> Result<Expr, ParseError> {
         Ok(Stmt::Expression{expression: expr})
     }
 
+    fn function(&mut self, kind: &str) -> Result<Stmt, ParseError> {
+        let name: Token = self.consume(TokenType::Identifier, format!("Expect {} name.", kind))?;
+        self.consume(TokenType::LeftParen, format!("Expect '(' after {} name.", kind))?;
+        let mut parameters: Vec<Token> = Vec::new();
+        if !self.check(&TokenType::RightParen) {
+            loop {
+                if parameters.len() >= 255 {
+                    error_token(self.peek(), "Can't have more than 255 parameters");
+                }
+                parameters.push(self.consume(TokenType::Identifier, "Expect parameter name.".to_string())?);
+                if !self.match_token(&[TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.".to_string())?;
+        self.consume(TokenType::LeftBrace, format!("Expect '{{' before {} body.", kind))?;
+        let body: Vec<Stmt> = self.block()?;
+        Ok(Stmt::Function{name, params: parameters, body})
+    }
+
     fn print_stmt(&mut self) -> Result<Stmt, ParseError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.".to_string())?;
@@ -327,6 +347,9 @@ fn primary(&mut self) -> Result<Expr, ParseError> {
     }
 
     fn declaration(&mut self) -> Result<Stmt, ParseError> {
+        if self.match_token(&[TokenType::Fun]) {
+            return self.function("function");
+        }
         if self.match_token(&[TokenType::Var]) {
             return self.var_decl();
         }

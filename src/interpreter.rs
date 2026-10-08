@@ -1,11 +1,10 @@
 use core::fmt;
 use std::cell::RefCell;
-use std::fmt::Arguments;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{environment::Environment, error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
-#[derive(PartialEq, PartialOrd, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
     Str(String),
@@ -36,8 +35,14 @@ impl fmt::Display for Value {
     }
 }
 
-fn is_equal(a: Value, b: Value) -> bool {
-    a == b
+fn is_equal(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Number(n1), Value::Number(n2)) => (n1 - n2).abs() < f64::EPSILON,
+        (Value::Str(s1), Value::Str(s2)) => s1 == s2,
+        (Value::Bool(b1), Value::Bool(b2)) => b1 == b2,
+        (Value::Nil, Value::Nil) => true,
+        (_, _) => false,
+    }
     //return a.equals(b);
 }
 
@@ -49,8 +54,8 @@ fn is_truthy(val: &Value) -> bool {
     }
 }
 
-#[derive(Clone, PartialEq, PartialOrd)]
-struct NativeFunction{
+#[derive(Clone)]
+pub struct NativeFunction {
     arity: usize,
     call_fn: fn(&mut Interpreter, &[Value]) -> Result<Value, RuntimeError>
 }
@@ -66,7 +71,7 @@ impl fmt::Display for NativeFunction {
     }
 }
 
-trait Callable {
+pub trait Callable {
     fn arity(&self) -> usize;
     fn call(&self, interpreter: &mut Interpreter, arguments: &[Value]) -> Result<Value, RuntimeError>;
 }
@@ -80,8 +85,8 @@ impl Callable for NativeFunction {
 
 pub struct Interpreter {
     pub result: String,
-    globals: Rc<RefCell<Environment>>,
-    environment: Rc<RefCell<Environment>>,
+    pub globals: Rc<RefCell<Environment>>,
+    pub environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpreter {
@@ -120,7 +125,7 @@ impl Interpreter {
         self.visit_stmt(stmt)
     }
 
-    fn execute_block(&mut self, statements: &Vec<Stmt>, environment: Rc<RefCell<Environment>>) -> Result<(), RuntimeError> {
+    pub fn execute_block(&mut self, statements: &Vec<Stmt>, environment: Rc<RefCell<Environment>>) -> Result<(), RuntimeError> {
         let previous = Rc::clone(&self.environment);
         self.environment = environment;
         let result: Result<(), RuntimeError> = (|| {
@@ -195,10 +200,10 @@ impl Interpreter {
                         Ok(Value::Bool(lhs <= rhs))
                     },
                     (_, TokenType::BangEqual, _) => {
-                        Ok(Value::Bool(!is_equal(l, r)))
+                        Ok(Value::Bool(!is_equal(&l, &r)))
                     },
                     (_, TokenType::EqualEqual, _) => {
-                        Ok(Value::Bool(is_equal(l, r)))
+                        Ok(Value::Bool(is_equal(&l, &r)))
                     },
                     (Value::Number(lhs), TokenType::Minus, Value::Number(rhs)) => {
                         Ok(Value::Number(lhs - rhs))
@@ -251,12 +256,12 @@ impl Interpreter {
                     args.push(self.evaluate(argument)?);
                 }
                 let function = callee;
-                match function{
+                match function {
                     Value::Fn(native_fn) => {
                         if arguments.len() != native_fn.arity() {
-                            return Err(RuntimeError{token: paren.clone(), message: format!("Expected {} arguments but got {}.", function.arity(), arguments.len())})
+                            return Err(RuntimeError{token: paren.clone(), message: format!("Expected {} arguments but got {}.", native_fn.arity(), arguments.len())})
                         }
-                        native_fn.call(interpreter, &args)
+                        native_fn.call(self, &args)
                     },
                     _ => {
                         Err(RuntimeError{token: paren.clone(), message: "Can only call functions and classes.".to_string()})
