@@ -2,6 +2,7 @@ use core::fmt;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::loxfunction::LoxFunction;
 use crate::{environment::Environment, error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
 #[derive(Debug, Clone)]
@@ -10,6 +11,7 @@ pub enum Value {
     Str(String),
     Bool(bool),
     Fn(NativeFunction),
+    LoxFn(LoxFunction),
     Nil,
 }
 
@@ -27,6 +29,9 @@ impl fmt::Display for Value {
             },
             Value::Fn(native_fn) => {
                 write!(f, "{}", native_fn)
+            },
+            Value::LoxFn(lox_fn) => {
+                write!(f, "{}", lox_fn)
             },
             Value::Nil => {
                 write!(f, "nil")
@@ -143,6 +148,10 @@ impl Interpreter {
             Stmt::Expression {expression} => {
                 self.evaluate(&expression)?;
             },
+            Stmt::Function(func) => {
+                let function: LoxFunction = LoxFunction::new(func.clone());
+                self.environment.borrow_mut().define(func.name.lexeme.clone(), Value::LoxFn(function));
+            },
             Stmt::If {condition, then_branch, else_branch} => {
                 if is_truthy(&self.evaluate(&condition)?) {
                     self.execute(then_branch)?;
@@ -154,6 +163,12 @@ impl Interpreter {
                 let value = self.evaluate(&expression)?;
                 self.result.push_str(&format!("{}\n", value));
                 print!("{}\n", value);
+            },
+            Stmt::Return {keyword, value} => {
+                let ret_val = Value::Nil;
+                if let Some(some_value) = value {
+                    ret_val = self.evaluate(some_value)?;
+                }
             },
             Stmt::Var {name, initializer} => {
                 let value: Value = match initializer {
@@ -259,9 +274,21 @@ impl Interpreter {
                 match function {
                     Value::Fn(native_fn) => {
                         if arguments.len() != native_fn.arity() {
-                            return Err(RuntimeError{token: paren.clone(), message: format!("Expected {} arguments but got {}.", native_fn.arity(), arguments.len())})
+                            return Err(RuntimeError{
+                                token: paren.clone(),
+                                message: format!("Expected {} arguments but got {}.", native_fn.arity(), arguments.len())
+                            })
                         }
                         native_fn.call(self, &args)
+                    },
+                    Value::LoxFn(lox_fn) => {
+                        if arguments.len() != lox_fn.arity() {
+                            return Err(RuntimeError{
+                                token: paren.clone(),
+                                message: format!("Expected {} arguments but got {}.", lox_fn.arity(), arguments.len())
+                            })
+                        }
+                        lox_fn.call(self, &args)
                     },
                     _ => {
                         Err(RuntimeError{token: paren.clone(), message: "Can only call functions and classes.".to_string()})

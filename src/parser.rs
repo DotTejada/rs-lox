@@ -1,4 +1,4 @@
-use crate::{error::{ParseError, error_token}, expr::Expr, stmt::Stmt, token::{Literal, Token}, tokentype::TokenType};
+use crate::{error::{ParseError, error_token}, expr::Expr, stmt::{Function, Stmt}, token::{Literal, Token}, tokentype::TokenType};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -241,13 +241,23 @@ fn primary(&mut self) -> Result<Expr, ParseError> {
         self.consume(TokenType::RightParen, "Expect ')' after parameters.".to_string())?;
         self.consume(TokenType::LeftBrace, format!("Expect '{{' before {} body.", kind))?;
         let body: Vec<Stmt> = self.block()?;
-        Ok(Stmt::Function{name, params: parameters, body})
+        Ok(Stmt::Function(Function{name, params: parameters, body}))
     }
 
     fn print_stmt(&mut self) -> Result<Stmt, ParseError> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.".to_string())?;
         Ok(Stmt::Print{expression: value})
+    }
+
+    fn return_stmt(&mut self) -> Result<Stmt, ParseError> {
+        let keyword = self.previous();
+        let mut value = None;
+        if !self.check(&TokenType::Semicolon) {
+            value = Some(self.expression()?);
+        }
+        self.consume(TokenType::Semicolon, format!("Expect ';' after return value."))?;
+        Ok(Stmt::Return{keyword, value})
     }
 
     fn if_stmt(&mut self) -> Result<Stmt, ParseError> {
@@ -280,6 +290,9 @@ fn primary(&mut self) -> Result<Expr, ParseError> {
         }
         if self.match_token(&[TokenType::Print]) {
             return self.print_stmt();
+        }
+        if self.match_token(&[TokenType::Return]) {
+            return self.return_stmt();
         }
         if self.match_token(&[TokenType::While]) {
             return self.while_stmt();
