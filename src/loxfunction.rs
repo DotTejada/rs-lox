@@ -5,13 +5,15 @@ use crate::{environment::Environment, error::RuntimeError, interpreter::{Callabl
 
 #[derive(Debug, Clone)]
 pub struct LoxFunction {
-    declaration: Function
+    declaration: Function,
+    closure: Rc<RefCell<Environment>>,
 }
 
 impl LoxFunction {
-    pub fn new(declaration: Function) -> Self {
+    pub fn new(declaration: Function, closure: Rc<RefCell<Environment>>) -> Self {
         Self {
-            declaration
+            declaration,
+            closure,
         }
     }
 }
@@ -23,11 +25,16 @@ impl Callable for LoxFunction {
     }
 
     fn call(&self, interpreter: &mut Interpreter, arguments: &[Value]) -> Result<Value, RuntimeError> {
-        let env = Rc::new(RefCell::new(Environment::from(interpreter.globals.clone())));
+        let env = Rc::new(RefCell::new(Environment::from(self.closure.clone())));
         for i in 0..self.declaration.params.len() {
             env.borrow_mut().define(self.declaration.params[i].lexeme.clone(), arguments[i].clone());
         }
         interpreter.execute_block(&self.declaration.body, env)?;
+        if let Some(ret_val) = &interpreter.ret_val {
+            let return_value = ret_val.clone();
+            interpreter.ret_val = None;
+            return Ok(return_value);
+        }
         return Ok(Value::Nil)
     }
 }

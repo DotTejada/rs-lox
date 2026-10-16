@@ -92,6 +92,7 @@ pub struct Interpreter {
     pub result: String,
     pub globals: Rc<RefCell<Environment>>,
     pub environment: Rc<RefCell<Environment>>,
+    pub ret_val: Option<Value>,
 }
 
 impl Interpreter {
@@ -112,6 +113,7 @@ impl Interpreter {
             result: String::new(),
             globals: globals.clone(),
             environment: globals,
+            ret_val: None,
         }
     }
 
@@ -144,12 +146,15 @@ impl Interpreter {
     }
 
     fn visit_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+        if self.ret_val.is_some() {
+            return Ok(());
+        }
         match stmt {
             Stmt::Expression {expression} => {
                 self.evaluate(&expression)?;
             },
             Stmt::Function(func) => {
-                let function: LoxFunction = LoxFunction::new(func.clone());
+                let function: LoxFunction = LoxFunction::new(func.clone(), self.environment.clone());
                 self.environment.borrow_mut().define(func.name.lexeme.clone(), Value::LoxFn(function));
             },
             Stmt::If {condition, then_branch, else_branch} => {
@@ -164,10 +169,11 @@ impl Interpreter {
                 self.result.push_str(&format!("{}\n", value));
                 print!("{}\n", value);
             },
-            Stmt::Return {keyword, value} => {
-                let ret_val = Value::Nil;
-                if let Some(some_value) = value {
-                    ret_val = self.evaluate(some_value)?;
+            Stmt::Return {keyword: _, value} => {
+                self.ret_val = if let Some(some_value) = value {
+                    Some(self.evaluate(some_value)?)
+                } else {
+                    Some(Value::Nil)
                 }
             },
             Stmt::Var {name, initializer} => {
