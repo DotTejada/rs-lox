@@ -41,6 +41,6 @@ impl Callable for LoxFunction {
 
 impl fmt::Display for LoxFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "<fn {} >", self.declaration.name.lexeme)
+        write!(f, "<fn {}>", self.declaration.name.lexeme)
     }
 }

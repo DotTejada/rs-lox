@@ -573,4 +573,165 @@ for (var b = 1; a < 10000; b = temp + b) {
         assert_eq!("hi\nyes\n", interpreter.result);
         Ok(())
     }
+
+    #[test]
+    fn function_add() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: function_add =====");
+        dbg!();
+        let source_string = String::from(
+"fun add(a, b, c) {
+    print a + b + c;
+}
+add(1, 2, 3);
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("6\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn function_add_print() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: function_add =====");
+        dbg!();
+        let source_string = String::from(
+"fun add(a, b, c) {
+    print a + b + c;
+}
+print add;
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("<fn add>\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn function_sayhi() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: function_sayhi =====");
+        dbg!();
+        let source_string = String::from(
+"fun sayHi(first, last) {
+    print \"Hi, \" + first + \" \" + last + \"!\";
+}
+sayHi(\"Dear\", \"Reader\");
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("Hi, Dear Reader!\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn function_fib() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: function_fib =====");
+        dbg!();
+        let source_string = String::from(
+"fun fib(n) {
+    if (n <= 1) return n;
+    return fib(n - 2) + fib(n - 1);
+}
+
+for (var i = 0; i < 20; i = i + 1) {
+    print fib(i);
+}
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!(
+"0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+"
+            , interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn function_counter() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: function_counter =====");
+        dbg!();
+        let source_string = String::from(
+"fun makeCounter() {
+    var i = 0;
+    fun count() {
+        i = i + 1;
+        print i;
+    }
+
+    return count;
+}
+
+var counter = makeCounter();
+counter();
+counter();
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("1\n2\n", interpreter.result);
+        Ok(())
+    }
+
 }
