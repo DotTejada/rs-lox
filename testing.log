@@ -1,33 +1,38 @@
 
-running 22 tests
+running 27 tests
 test environment::tests::env_first_second ... ok
 test environment::tests::env_redefinition ... ok
-test expr::tests::ast_example ... ok
 test environment::tests::env_shadowing ... ok
-test expr::tests::ast_simple ... ok
 test environment::tests::env_simple ... ok
 test environment::tests::env_simple_enclosing ... ok
-test interpreter::tests::interpret_eq ... ok
+test expr::tests::ast_example ... ok
+test expr::tests::ast_simple ... ok
+test interpreter::tests::function_add ... ok
+test interpreter::tests::function_add_print ... ok
+test interpreter::tests::function_counter ... ok
+test interpreter::tests::function_sayhi ... ok
 test interpreter::tests::interpret_cstylefor ... ok
-test interpreter::tests::interpret_math ... ok
-test interpreter::tests::interpret_strconcat ... ok
+test interpreter::tests::interpret_eq ... ok
 test interpreter::tests::interpret_truthiness ... ok
-test interpreter::tests::interpret_fib ... ok
-test parser::tests::parse_logic ... ok
-test parser::tests::parse_unary ... ok
 test scanner::tests::scan_string ... ok
-test scanner::tests::scan_comment ... ok
-test scanner::tests::scan_multichar_tokens ... ok
 test scanner::tests::scan_loop ... ok
-test parser::tests::parse_math ... ok
-test interpreter::tests::interpret_while ... ok
+test interpreter::tests::interpret_strconcat ... ok
+test scanner::tests::scan_comment ... ok
+test parser::tests::parse_unary ... ok
 test scanner::tests::scan_math ... ok
+test interpreter::tests::interpret_while ... ok
+test interpreter::tests::interpret_math ... ok
+test interpreter::tests::interpret_fib ... ok
+test scanner::tests::scan_multichar_tokens ... ok
+test parser::tests::parse_logic ... ok
+test parser::tests::parse_math ... ok
+test interpreter::tests::function_fib ... ok
 
 successes:
 
 ---- environment::tests::env_first_second stdout ----
 ===== test: env_first_second =====
-[src/environment.rs:146:9]
+[src/environment.rs:147:9]
 Input:
 {
     var a = "first";
@@ -44,7 +49,7 @@ second
 
 ---- environment::tests::env_redefinition stdout ----
 ===== test: env_redefinition =====
-[src/environment.rs:198:9]
+[src/environment.rs:199:9]
 Input:
 var a = 1;
 a = 2;
@@ -52,6 +57,64 @@ print a;
 =====
 Output:
 2
+
+---- environment::tests::env_shadowing stdout ----
+===== test: env_shadowing =====
+[src/environment.rs:69:9]
+Input:
+var a = "global a";
+var b = "global b";
+var c = "global c";
+{
+  var a = "outer a";
+  var b = "outer b";
+  {
+    var a = "inner a";
+    print a;
+    print b;
+    print c;
+  }
+  print a;
+  print b;
+  print c;
+}
+print a;
+print b;
+print c;
+=====
+Output:
+inner a
+outer b
+global c
+outer a
+outer b
+global c
+global a
+global b
+global c
+
+---- environment::tests::env_simple stdout ----
+===== test: env_simple =====
+[src/environment.rs:176:9]
+Input:
+var a = 1;
+print a;
+=====
+Output:
+1
+
+---- environment::tests::env_simple_enclosing stdout ----
+===== test: env_simple_enclosing =====
+[src/environment.rs:120:9]
+Input:
+var global = "outside";
+{
+    var local = "inside";
+    print global + local;
+}
+=====
+Output:
+outsideinside
 
 ---- expr::tests::ast_example stdout ----
 ===== test: ast_example =====
@@ -88,41 +151,6 @@ Binary {
 =====
 Output: (* (- 123) (group 45.67))
 
----- environment::tests::env_shadowing stdout ----
-===== test: env_shadowing =====
-[src/environment.rs:68:9]
-Input:
-var a = "global a";
-var b = "global b";
-var c = "global c";
-{
-  var a = "outer a";
-  var b = "outer b";
-  {
-    var a = "inner a";
-    print a;
-    print b;
-    print c;
-  }
-  print a;
-  print b;
-  print c;
-}
-print a;
-print b;
-print c;
-=====
-Output:
-inner a
-outer b
-global c
-outer a
-outer b
-global c
-global a
-global b
-global c
-
 ---- expr::tests::ast_simple stdout ----
 ===== test: ast_simple =====
 [src/expr.rs:104:9]
@@ -148,41 +176,67 @@ Binary {
 =====
 Output: (+ 1 2)
 
----- environment::tests::env_simple stdout ----
-===== test: env_simple =====
-[src/environment.rs:175:9]
+---- interpreter::tests::function_add stdout ----
+===== test: function_add =====
+[src/interpreter.rs:580:9]
 Input:
-var a = 1;
-print a;
+fun add(a, b, c) {
+    print a + b + c;
+}
+add(1, 2, 3);
+=====
+Output:
+6
+
+---- interpreter::tests::function_add_print stdout ----
+===== test: function_add =====
+[src/interpreter.rs:605:9]
+Input:
+fun add(a, b, c) {
+    print a + b + c;
+}
+print add;
+=====
+Output:
+<fn add>
+
+---- interpreter::tests::function_counter stdout ----
+===== test: function_counter =====
+[src/interpreter.rs:706:9]
+Input:
+fun makeCounter() {
+    var i = 0;
+    fun count() {
+        i = i + 1;
+        print i;
+    }
+
+    return count;
+}
+
+var counter = makeCounter();
+counter();
+counter();
 =====
 Output:
 1
+2
 
----- environment::tests::env_simple_enclosing stdout ----
-===== test: env_simple_enclosing =====
-[src/environment.rs:119:9]
+---- interpreter::tests::function_sayhi stdout ----
+===== test: function_sayhi =====
+[src/interpreter.rs:630:9]
 Input:
-var global = "outside";
-{
-    var local = "inside";
-    print global + local;
+fun sayHi(first, last) {
+    print "Hi, " + first + " " + last + "!";
 }
+sayHi("Dear", "Reader");
 =====
 Output:
-outsideinside
-
----- interpreter::tests::interpret_eq stdout ----
-===== test: interpret_eq =====
-[src/interpreter.rs:292:9]
-Input:
-print (42 + 5) == 47;
-=====
-Output:
-true
+Hi, Dear Reader!
 
 ---- interpreter::tests::interpret_cstylefor stdout ----
 ===== test: interpret_cstylefor =====
-[src/interpreter.rs:423:9]
+[src/interpreter.rs:528:9]
 Input:
 for (var i = 0; i < 10; i = i + 1) print i;=====
 Output:
@@ -197,27 +251,18 @@ Output:
 8
 9
 
----- interpreter::tests::interpret_math stdout ----
-===== test: interpret_math =====
-[src/interpreter.rs:272:9]
+---- interpreter::tests::interpret_eq stdout ----
+===== test: interpret_eq =====
+[src/interpreter.rs:397:9]
 Input:
-print 34.56 * 3 - 21 / 2 + 54.23 - 90;
+print (42 + 5) == 47;
 =====
 Output:
-57.41
-
----- interpreter::tests::interpret_strconcat stdout ----
-===== test: interpret_strconcat =====
-[src/interpreter.rs:312:9]
-Input:
-print "hello" + " world";
-=====
-Output:
-hello world
+true
 
 ---- interpreter::tests::interpret_truthiness stdout ----
 ===== test: interpret_cstylefor =====
-[src/interpreter.rs:455:9]
+[src/interpreter.rs:560:9]
 Input:
 print "hi" or 2;
 print nil or "yes";
@@ -225,57 +270,6 @@ print nil or "yes";
 Output:
 hi
 yes
-
----- interpreter::tests::interpret_fib stdout ----
-===== test: interpret_fib =====
-[src/interpreter.rs:332:9]
-Input:
-var a = 0;
-var temp;
-for (var b = 1; a < 10000; b = temp + b) {
-    print a;
-    temp = a;
-    a = b;
-}
-=====
-Output:
-0
-1
-1
-2
-3
-5
-8
-13
-21
-34
-55
-89
-144
-233
-377
-610
-987
-1597
-2584
-4181
-6765
-
----- parser::tests::parse_logic stdout ----
-===== test: parse_logic =====
-[src/parser.rs:382:9]
-Input:
-true != false == ( true == false );
-=====
-Output: (== (!= true false) (group (== true false)))
-
----- parser::tests::parse_unary stdout ----
-===== test: parse_unary =====
-[src/parser.rs:326:9]
-Input:
-!true == -97 + 38;
-=====
-Output: (== (! true) (+ (- 97) 38))
 
 ---- scanner::tests::scan_string stdout ----
 ===== test: scan_string =====
@@ -310,132 +304,6 @@ Output: [
                 "hello",
             ),
         ),
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Eof,
-        lexeme: "",
-        literal: None,
-        line: 1,
-    },
-]
-
----- scanner::tests::scan_comment stdout ----
-===== test: scan_comment =====
-[src/scanner.rs:253:9]
-Input:
-// this is a comment
-=====
-Output: [
-    Token {
-        kind: Eof,
-        lexeme: "",
-        literal: None,
-        line: 1,
-    },
-]
-
----- scanner::tests::scan_multichar_tokens stdout ----
-===== test: scan_multichar_tokens =====
-[src/scanner.rs:292:9]
-Input:
-a <= b; b >= c; c != d; d == e;
-=====
-Output: [
-    Token {
-        kind: Identifier,
-        lexeme: "a",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: LessEqual,
-        lexeme: "<=",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "b",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "b",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: GreaterEqual,
-        lexeme: ">=",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "c",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "c",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: BangEqual,
-        lexeme: "!=",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "d",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "d",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: EqualEqual,
-        lexeme: "==",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "e",
-        literal: None,
         line: 1,
     },
     Token {
@@ -613,37 +481,37 @@ Output: [
     },
 ]
 
----- parser::tests::parse_math stdout ----
-===== test: parse_math =====
-[src/parser.rs:354:9]
+---- interpreter::tests::interpret_strconcat stdout ----
+===== test: interpret_strconcat =====
+[src/interpreter.rs:417:9]
 Input:
-12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;
-=====
-Output: (+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))
-
----- interpreter::tests::interpret_while stdout ----
-===== test: interpret_while =====
-[src/interpreter.rs:383:9]
-Input:
-{
-    var i = 0;
-    while (i < 10) {
-        print i;
-        i = i + 1;
-    }
-}
+print "hello" + " world";
 =====
 Output:
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
+hello world
+
+---- scanner::tests::scan_comment stdout ----
+===== test: scan_comment =====
+[src/scanner.rs:253:9]
+Input:
+// this is a comment
+=====
+Output: [
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- parser::tests::parse_unary stdout ----
+===== test: parse_unary =====
+[src/parser.rs:391:9]
+Input:
+!true == -97 + 38;
+=====
+Output: (== (! true) (+ (- 97) 38))
 
 ---- scanner::tests::scan_math stdout ----
 ===== test: scan_math =====
@@ -756,6 +624,236 @@ Output: [
     },
 ]
 
+---- interpreter::tests::interpret_while stdout ----
+===== test: interpret_while =====
+[src/interpreter.rs:488:9]
+Input:
+{
+    var i = 0;
+    while (i < 10) {
+        print i;
+        i = i + 1;
+    }
+}
+=====
+Output:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+---- interpreter::tests::interpret_math stdout ----
+===== test: interpret_math =====
+[src/interpreter.rs:377:9]
+Input:
+print 34.56 * 3 - 21 / 2 + 54.23 - 90;
+=====
+Output:
+57.41
+
+---- interpreter::tests::interpret_fib stdout ----
+===== test: interpret_fib =====
+[src/interpreter.rs:437:9]
+Input:
+var a = 0;
+var temp;
+for (var b = 1; a < 10000; b = temp + b) {
+    print a;
+    temp = a;
+    a = b;
+}
+=====
+Output:
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+6765
+
+---- scanner::tests::scan_multichar_tokens stdout ----
+===== test: scan_multichar_tokens =====
+[src/scanner.rs:292:9]
+Input:
+a <= b; b >= c; c != d; d == e;
+=====
+Output: [
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: LessEqual,
+        lexeme: "<=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: GreaterEqual,
+        lexeme: ">=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: BangEqual,
+        lexeme: "!=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: EqualEqual,
+        lexeme: "==",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "e",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- parser::tests::parse_logic stdout ----
+===== test: parse_logic =====
+[src/parser.rs:447:9]
+Input:
+true != false == ( true == false );
+=====
+Output: (== (!= true false) (group (== true false)))
+
+---- parser::tests::parse_math stdout ----
+===== test: parse_math =====
+[src/parser.rs:419:9]
+Input:
+12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;
+=====
+Output: (+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))
+
+---- interpreter::tests::function_fib stdout ----
+===== test: function_fib =====
+[src/interpreter.rs:655:9]
+Input:
+fun fib(n) {
+    if (n <= 1) return n;
+    return fib(n - 2) + fib(n - 1);
+}
+
+for (var i = 0; i < 20; i = i + 1) {
+    print fib(i);
+}
+=====
+Output:
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+
 
 successes:
     environment::tests::env_first_second
@@ -765,6 +863,11 @@ successes:
     environment::tests::env_simple_enclosing
     expr::tests::ast_example
     expr::tests::ast_simple
+    interpreter::tests::function_add
+    interpreter::tests::function_add_print
+    interpreter::tests::function_counter
+    interpreter::tests::function_fib
+    interpreter::tests::function_sayhi
     interpreter::tests::interpret_cstylefor
     interpreter::tests::interpret_eq
     interpreter::tests::interpret_fib
@@ -781,7 +884,7 @@ successes:
     scanner::tests::scan_multichar_tokens
     scanner::tests::scan_string
 
-test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
 
 
 running 0 tests
