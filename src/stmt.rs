@@ -1,4 +1,4 @@
-use crate::{expr::Expr, token::Token};
+use crate::{expr::ENode, token::Token};
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -18,27 +18,27 @@ pub enum Stmt {
     //    methods: Vec<Box<Stmt>>,
     //},
     Expression {
-        expression: Expr,
+        expression: ENode,
     },
     Function(Function),
     If {
-        condition: Expr,
+        condition: ENode,
         then_branch: Box<Stmt>,
         else_branch: Option<Box<Stmt>>,
     },
     Print {
-        expression: Expr,
+        expression: ENode,
     },
     Return {
         keyword: Token,
-        value: Option<Expr>,
+        value: Option<ENode>,
     },
     Var {
         name: Token,
-        initializer: Option<Expr>,
+        initializer: Option<ENode>,
     },
     While {
-        condition: Expr,
+        condition: ENode,
         body: Box<Stmt>,
     },
 }

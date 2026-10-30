@@ -51,18 +51,18 @@ impl Parser {
         self.tokens[self.current - 1].clone()
     }
 
-    fn expression(&mut self) -> Result<Expr, ParseError> {
+    fn expression(&mut self) -> Result<ENode, ParseError> {
         Ok(self.assignment()?)
     }
 
-    fn assignment(&mut self) -> Result<Expr, ParseError> {
+    fn assignment(&mut self) -> Result<ENode, ParseError> {
         let expr = self.or()?;
         if self.match_token(&[TokenType::Equal]) {
             let equals = self.previous();
             let value = self.assignment()?;
-            return match expr {
+            return match expr.expr {
                 Expr::Variable{name} => {
-                    Ok(Expr::Assign{name, value: Box::new(ENode::new(value)) })
+                    Ok(ENode::new(Expr::Assign{name, value: Box::new(value) }))
                 },
                 _ => {
                     Err(ParseError{token: equals, message: "Invalid assignment target.".to_string()})
@@ -72,77 +72,77 @@ impl Parser {
         Ok(expr)
     }
 
-    fn or(&mut self) -> Result<Expr, ParseError> {
+    fn or(&mut self) -> Result<ENode, ParseError> {
         let mut expr = self.and()?;
         while self.match_token(&[TokenType::Or]) {
             let operator = self.previous();
             let right = self.and()?;
-            expr = Expr::Logical{left: Box::new(ENode::new(expr)), operator, right: Box::new(ENode::new(right))};
+            expr = ENode::new(Expr::Logical{left: Box::new(expr), operator, right: Box::new(right)});
         }
         Ok(expr)
     }
 
-    fn and(&mut self) -> Result<Expr, ParseError> {
+    fn and(&mut self) -> Result<ENode, ParseError> {
         let mut expr = self.equality()?;
         while self.match_token(&[TokenType::And]) {
             let operator = self.previous();
             let right = self.equality()?;
-            expr = Expr::Logical{left: Box::new(ENode::new(expr)), operator, right: Box::new(ENode::new(right))};
+            expr = ENode::new(Expr::Logical{left: Box::new(expr), operator, right: Box::new(right)});
         }
         Ok(expr)
     }
 
-    fn equality(&mut self) -> Result<Expr, ParseError> {
+    fn equality(&mut self) -> Result<ENode, ParseError> {
         let mut expr = self.comparison()?;
         while self.match_token(&[TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous();
             let right = self.comparison()?;
-            expr = Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) };
+            expr = ENode::new(Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) });
         }
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expr, ParseError> {
+    fn comparison(&mut self) -> Result<ENode, ParseError> {
         let mut expr = self.term()?;
         while self.match_token(&[TokenType::Greater, TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
             let operator = self.previous();
             let right = self.term()?;
-            expr = Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) };
+            expr = ENode::new(Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) });
         }
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, ParseError> {
+    fn term(&mut self) -> Result<ENode, ParseError> {
         let mut expr = self.factor()?;
         while self.match_token(&[TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous();
             let right = self.factor()?;
-            expr = Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) };
+            expr = ENode::new(Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) });
         }
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, ParseError> {
+    fn factor(&mut self) -> Result<ENode, ParseError> {
         let mut expr = self.unary()?;
         while self.match_token(&[TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
             let right = self.unary()?;
-            expr = Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) };
+            expr = ENode::new(Expr::Binary{left: Box::new(expr), operator, right: Box::new(right) });
         }
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, ParseError> {
+    fn unary(&mut self) -> Result<ENode, ParseError> {
         if self.match_token(&[TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
             let right = self.unary()?;
-            return Ok(Expr::Unary{operator, right: Box::new(right) });
+            return Ok(ENode::new(Expr::Unary{operator, right: Box::new(right) }));
         }
         self.call()
     }
 
-    fn finish_call(&mut self, callee: Expr) -> Result<Expr, ParseError> {
-        let mut arguments: Vec<Expr> = Vec::new();
+    fn finish_call(&mut self, callee: ENode) -> Result<ENode, ParseError> {
+        let mut arguments: Vec<ENode> = Vec::new();
         if !self.check(&TokenType::RightParen) {
             loop {
                 if arguments.len() >= 255 {
@@ -155,9 +155,9 @@ impl Parser {
             }
         }
         let paren = self.consume(TokenType::RightParen, "Expect ')' after arguments.".to_string())?;
-        Ok(Expr::Call{callee: Box::new(callee), paren, arguments})
+        Ok(ENode::new(Expr::Call{callee: Box::new(callee), paren, arguments}))
     }
-    fn call(&mut self) -> Result<Expr, ParseError> {
+    fn call(&mut self) -> Result<ENode, ParseError> {
         let mut expr = self.primary()?;
         loop {
             if self.match_token(&[TokenType::LeftParen]) {
@@ -169,21 +169,21 @@ impl Parser {
         Ok(expr)
     }
 
-fn primary(&mut self) -> Result<Expr, ParseError> {
-        if self.match_token(&[TokenType::False]) { return Ok(Expr::Literal{value: Literal::False}); }
-        if self.match_token(&[TokenType::True]) { return Ok(Expr::Literal{value: Literal::True}); }
-        if self.match_token(&[TokenType::Nil]) { return Ok(Expr::Literal{value: Literal::Nil}); }
+fn primary(&mut self) -> Result<ENode, ParseError> {
+        if self.match_token(&[TokenType::False]) { return Ok(ENode::new(Expr::Literal{value: Literal::False})); }
+        if self.match_token(&[TokenType::True]) { return Ok(ENode::new(Expr::Literal{value: Literal::True})); }
+        if self.match_token(&[TokenType::Nil]) { return Ok(ENode::new(Expr::Literal{value: Literal::Nil})); }
 
-        if self.match_token(&[TokenType::Number, TokenType::String]) { return Ok(Expr::Literal{value: self.previous().literal.unwrap() }); }
+        if self.match_token(&[TokenType::Number, TokenType::String]) { return Ok(ENode::new(Expr::Literal{value: self.previous().literal.unwrap() })); }
 
         if self.match_token(&[TokenType::Identifier]) {
-            return Ok(Expr::Variable{name: self.previous()});
+            return Ok(ENode::new(Expr::Variable{name: self.previous()}));
         }
 
         if self.match_token(&[TokenType::LeftParen]) {
             let expr = self.expression()?;
             self.consume(TokenType::RightParen, "Expect ')' after expression".to_string())?;
-            return Ok(Expr::Grouping{expression: Box::new(expr)});
+            return Ok(ENode::new(Expr::Grouping{expression: Box::new(expr)}));
         };
         Err( ParseError{token: self.peek(), message: "Expect expression".to_string()} )
     }
@@ -330,7 +330,7 @@ fn primary(&mut self) -> Result<Expr, ParseError> {
             }
         }
         if let None = condition {
-            condition = Some(Expr::Literal {value: Literal::True});
+            condition = Some(ENode::new(Expr::Literal {value: Literal::True}));
         }
         body = Stmt::While {condition: condition.unwrap(), body: Box::new(body)};
         if let Some(init) = initializer {
@@ -342,7 +342,7 @@ fn primary(&mut self) -> Result<Expr, ParseError> {
     fn var_decl(&mut self) -> Result<Stmt, ParseError> {
         let name = self.consume(TokenType::Identifier, "Expect variable name.".to_string())?;
 
-        let mut initializer: Option<Expr> = None;
+        let mut initializer: Option<ENode> = None;
         if self.match_token(&[TokenType::Equal]) {
             initializer = Some(self.expression()?);
         }
@@ -397,7 +397,7 @@ mod tests {
         let mut parser: Parser = Parser::new(tokens);
         let statements = parser.parse()?;
         for stmt in statements {
-            let expr = match stmt {
+            let expr: ENode = match stmt {
                 Stmt::Expression {expression} => {
                     expression
                 },
@@ -425,7 +425,7 @@ mod tests {
         let mut parser: Parser = Parser::new(tokens);
         let statements = parser.parse()?;
         for stmt in statements {
-            let expr = match stmt {
+            let expr: ENode = match stmt {
                 Stmt::Expression {expression} => {
                     expression
                 },
@@ -453,7 +453,7 @@ mod tests {
         let mut parser: Parser = Parser::new(tokens);
         let statements = parser.parse()?;
         for stmt in statements {
-            let expr = match stmt {
+            let expr: ENode = match stmt {
                 Stmt::Expression {expression} => {
                     expression
                 },

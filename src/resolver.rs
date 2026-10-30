@@ -82,38 +82,38 @@ impl Resolver {
         Ok(())
     }
 
-    fn visit_expr(&mut self, expr: &Expr) -> Result<(), RuntimeError> {
-        match expr {
+    fn visit_expr(&mut self, expr: &ENode) -> Result<(), RuntimeError> {
+        match &expr.expr {
             Expr::Assign { name, value } => {
-                self.resolve_expr(&value.expr)?;
-                self.resolve_local(expr, name)?;
+                self.resolve_expr(value)?;
+                self.resolve_local(expr, name);
             },
             Expr::Binary { left, operator: _, right } => {
-                self.resolve_expr(&left.expr)?;
-                self.resolve_expr(&right.expr)?;
+                self.resolve_expr(left)?;
+                self.resolve_expr(right)?;
             },
-            Expr::Call { callee, paren, arguments } => {
-                self.resolve_expr(&callee.expr)?;
+            Expr::Call { callee, paren: _, arguments } => {
+                self.resolve_expr(callee)?;
                 for arg in arguments {
-                    self.resolve_expr(&arg.expr)?;
+                    self.resolve_expr(arg)?;
                 }
             },
             Expr::Grouping { expression } => {
-                self.resolve_expr(&expression.expr)?;
+                self.resolve_expr(expression)?;
             },
             Expr::Literal {..} => {},
             Expr::Logical { left, operator: _, right } => {
-                self.resolve_expr(&left.expr)?;
-                self.resolve_expr(&right.expr)?;
+                self.resolve_expr(left)?;
+                self.resolve_expr(right)?;
             },
             Expr::Unary { operator: _, right } => {
-                self.resolve_expr(&right.expr)?;
+                self.resolve_expr(right)?;
             },
             Expr::Variable { name } => {
                 if let Some(top) = self.scopes.last() && let Some(e) = top.get(&name.lexeme) && !e {
                     error_token(name.clone(), "Can't read local variable in its own initializer");
                 }
-                self.resolve_local(expr, name)?;
+                self.resolve_local(expr, name);
             },
         }
         Ok(())
@@ -123,11 +123,11 @@ impl Resolver {
         self.visit_stmt(stmt)
     }
 
-    fn resolve_expr(&mut self, expr: &Expr) -> Result<(), RuntimeError> {
+    fn resolve_expr(&mut self, expr: &ENode) -> Result<(), RuntimeError> {
         self.visit_expr(expr)
     }
 
-    fn resolve_local(&mut self, expr: &Expr, name: &Token) {
+    fn resolve_local(&mut self, expr: &ENode, name: &Token) {
         for (i, scope) in self.scopes.iter().rev().enumerate() {
             if scope.contains_key(&name.lexeme) {
                 self.interpreter.resolve(expr, self.scopes.len() - 1 - i);

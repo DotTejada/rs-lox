@@ -131,7 +131,7 @@ impl Interpreter {
         self.locals.insert(expr.id, depth);
     }
 
-    fn evaluate(&mut self, expr: &Expr) -> Result<Value, RuntimeError> {
+    fn evaluate(&mut self, expr: &ENode) -> Result<Value, RuntimeError> {
         self.visit(expr)
     }
 
@@ -209,11 +209,11 @@ impl Interpreter {
         Ok(())
     }
 
-    fn visit(&mut self, expr: &Expr) -> Result<Value, RuntimeError> {
-        match expr {
+    fn visit(&mut self, expr: &ENode) -> Result<Value, RuntimeError> {
+        match &expr.expr {
             Expr::Binary{left, operator, right} => {
-                let l = self.evaluate(&left.expr)?;
-                let r = self.evaluate(&right.expr)?;
+                let l = self.evaluate(left)?;
+                let r = self.evaluate(right)?;
                 match (&l, operator.kind, &r) {
                     (Value::Number(lhs), TokenType::Greater, Value::Number(rhs)) => {
                         Ok(Value::Bool(lhs > rhs))
@@ -278,10 +278,10 @@ impl Interpreter {
                 }
             },
             Expr::Call{callee, paren, arguments} => {
-                let callee = self.evaluate(&callee.expr)?;
+                let callee = self.evaluate(callee)?;
                 let mut args: Vec<Value> = Vec::new();
                 for argument in arguments {
-                    args.push(self.evaluate(&argument.expr)?);
+                    args.push(self.evaluate(argument)?);
                 }
                 let function = callee;
                 match function {
@@ -309,7 +309,7 @@ impl Interpreter {
                 }
             },
             Expr::Grouping{expression} => {
-                self.evaluate(&expression.expr)
+                self.evaluate(expression)
             },
             Expr::Literal{value} => {
                 match value {
@@ -331,7 +331,7 @@ impl Interpreter {
                 }
             },
             Expr::Logical {left, operator, right} => {
-                let left = self.evaluate(&left.expr)?;
+                let left = self.evaluate(left)?;
                 if operator.kind == TokenType::Or {
                     if is_truthy(&left) {
                         return Ok(left);
@@ -341,10 +341,10 @@ impl Interpreter {
                         return Ok(left);
                     }
                 }
-                self.evaluate(&right.expr)
+                self.evaluate(right)
             },
             Expr::Unary{operator, right} => {
-                let right = self.evaluate(&right.expr)?;
+                let right = self.evaluate(right)?;
                 match (operator.kind, &right) {
                     (TokenType::Minus, Value::Number(rhs)) => {
                         Ok(Value::Number(-rhs))
@@ -364,7 +364,7 @@ impl Interpreter {
                 self.environment.borrow().get(name.clone())
             },
             Expr::Assign{name, value} => {
-                let value = self.evaluate(&value.expr)?;
+                let value = self.evaluate(value)?;
                 self.environment.borrow_mut().assign(name.clone(), value.clone())?;
                 Ok(value)
             },
