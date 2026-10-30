@@ -1,4 +1,4 @@
-use crate::{error::{ParseError, error_token}, expr::Expr, stmt::{Function, Stmt}, token::{Literal, Token}, tokentype::TokenType};
+use crate::{error::{ParseError, error_token}, expr::{ENode, Expr}, stmt::{Function, Stmt}, token::{Literal, Token}, tokentype::TokenType};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -62,7 +62,7 @@ impl Parser {
             let value = self.assignment()?;
             return match expr {
                 Expr::Variable{name} => {
-                    Ok(Expr::Assign{name, value: Box::new(value) })
+                    Ok(Expr::Assign{name, value: Box::new(ENode::new(value)) })
                 },
                 _ => {
                     Err(ParseError{token: equals, message: "Invalid assignment target.".to_string()})
@@ -77,7 +77,7 @@ impl Parser {
         while self.match_token(&[TokenType::Or]) {
             let operator = self.previous();
             let right = self.and()?;
-            expr = Expr::Logical{left: Box::new(expr), operator, right: Box::new(right)};
+            expr = Expr::Logical{left: Box::new(ENode::new(expr)), operator, right: Box::new(ENode::new(right))};
         }
         Ok(expr)
     }
@@ -87,7 +87,7 @@ impl Parser {
         while self.match_token(&[TokenType::And]) {
             let operator = self.previous();
             let right = self.equality()?;
-            expr = Expr::Logical{left: Box::new(expr), operator, right: Box::new(right)};
+            expr = Expr::Logical{left: Box::new(ENode::new(expr)), operator, right: Box::new(ENode::new(right))};
         }
         Ok(expr)
     }

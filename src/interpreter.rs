@@ -1,9 +1,10 @@
 use core::fmt;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::loxfunction::LoxFunction;
-use crate::{environment::Environment, error::RuntimeError, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
+use crate::{environment::Environment, error::RuntimeError, expr::ENode, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -91,6 +92,7 @@ impl Callable for NativeFunction {
 pub struct Interpreter {
     pub result: String,
     pub globals: Rc<RefCell<Environment>>,
+    pub locals: HashMap<usize, usize>,
     pub environment: Rc<RefCell<Environment>>,
     pub ret_val: Option<Value>,
 }
@@ -112,6 +114,7 @@ impl Interpreter {
         Self {
             result: String::new(),
             globals: globals.clone(),
+            locals: HashMap::new(),
             environment: globals,
             ret_val: None,
         }
@@ -122,6 +125,10 @@ impl Interpreter {
             self.execute(stmt)?;
         }
         Ok(())
+    }
+
+    pub fn resolve(&mut self, expr: &ENode, depth: usize) {
+        self.locals.insert(expr.id, depth);
     }
 
     fn evaluate(&mut self, expr: &Expr) -> Result<Value, RuntimeError> {
@@ -205,8 +212,8 @@ impl Interpreter {
     fn visit(&mut self, expr: &Expr) -> Result<Value, RuntimeError> {
         match expr {
             Expr::Binary{left, operator, right} => {
-                let l = self.evaluate(&left)?;
-                let r = self.evaluate(&right)?;
+                let l = self.evaluate(&left.expr)?;
+                let r = self.evaluate(&right.expr)?;
                 match (&l, operator.kind, &r) {
                     (Value::Number(lhs), TokenType::Greater, Value::Number(rhs)) => {
                         Ok(Value::Bool(lhs > rhs))
@@ -271,10 +278,10 @@ impl Interpreter {
                 }
             },
             Expr::Call{callee, paren, arguments} => {
-                let callee = self.evaluate(&callee)?;
+                let callee = self.evaluate(&callee.expr)?;
                 let mut args: Vec<Value> = Vec::new();
                 for argument in arguments {
-                    args.push(self.evaluate(argument)?);
+                    args.push(self.evaluate(&argument.expr)?);
                 }
                 let function = callee;
                 match function {
@@ -302,7 +309,7 @@ impl Interpreter {
                 }
             },
             Expr::Grouping{expression} => {
-                self.evaluate(&expression)
+                self.evaluate(&expression.expr)
             },
             Expr::Literal{value} => {
                 match value {
@@ -324,7 +331,7 @@ impl Interpreter {
                 }
             },
             Expr::Logical {left, operator, right} => {
-                let left = self.evaluate(&left)?;
+                let left = self.evaluate(&left.expr)?;
                 if operator.kind == TokenType::Or {
                     if is_truthy(&left) {
                         return Ok(left);
@@ -334,10 +341,10 @@ impl Interpreter {
                         return Ok(left);
                     }
                 }
-                self.evaluate(&right)
+                self.evaluate(&right.expr)
             },
             Expr::Unary{operator, right} => {
-                let right = self.evaluate(&right)?;
+                let right = self.evaluate(&right.expr)?;
                 match (operator.kind, &right) {
                     (TokenType::Minus, Value::Number(rhs)) => {
                         Ok(Value::Number(-rhs))
@@ -357,7 +364,7 @@ impl Interpreter {
                 self.environment.borrow().get(name.clone())
             },
             Expr::Assign{name, value} => {
-                let value = self.evaluate(&value)?;
+                let value = self.evaluate(&value.expr)?;
                 self.environment.borrow_mut().assign(name.clone(), value.clone())?;
                 Ok(value)
             },
