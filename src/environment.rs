@@ -28,7 +28,23 @@ impl Environment {
         self.values.insert(name, value);
     }
 
-    pub fn get(&self, name: Token) -> Result<Value, RuntimeError> {
+    //pub fn ancestor(&mut self, distance: usize) -> Rc<RefCell<Environment>> {
+    //    for i in 0..distance {
+    //        self = self.enclosing;
+    //    }
+    //    return self
+    //}
+
+    pub fn get_at(&self, distance: usize, name: &String) -> Result<Value, RuntimeError> {
+        //ancestor(distance).values.get(name)
+        if distance == 0 {
+            return Ok(self.values.get(name).unwrap().clone());
+        } else {
+            return self.enclosing.as_ref().unwrap().borrow().get_at(distance - 1, name);
+        }
+    }
+
+    pub fn get(&self, name: &Token) -> Result<Value, RuntimeError> {
         match self.values.get(&name.lexeme) {
             Some(r) => {
                 Ok(r.clone())
@@ -42,10 +58,10 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: Token, value: Value) -> Result<(), RuntimeError> {
+    pub fn assign(&mut self, name: &Token, value: &Value) -> Result<(), RuntimeError> {
         match self.values.get_mut(&name.lexeme) {
             Some(existing_value) => {
-                *existing_value = value;
+                *existing_value = value.clone();
                 Ok(())
             },
             None => {
@@ -56,11 +72,22 @@ impl Environment {
             },
         }
     }
+
+    pub fn assign_at(&mut self, distance: usize, name: &Token, value: &Value) -> Result<(), RuntimeError> {
+        if distance == 0 {
+            self.values.insert(name.lexeme.clone(), value.clone());
+        } else {
+            return self.enclosing.as_ref().unwrap().borrow_mut().assign_at(distance - 1, name, value);
+        }
+        Ok(())
+    }
+
 }
 
 #[cfg(test)]
 mod tests {
     use crate::interpreter::Interpreter;
+    use crate::resolver::Resolver;
     use crate::{parser::Parser, scanner::Scanner, token::Token};
 
     #[test]
@@ -96,6 +123,12 @@ print c;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -135,6 +168,12 @@ global c
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
 
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
         interpreter.interpret(expression)?;
 
         assert_eq!("outsideinside\n", interpreter.result);
@@ -164,6 +203,12 @@ global c
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
 
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
         interpreter.interpret(expression)?;
 
         assert_eq!("first\nsecond\n", interpreter.result);
@@ -186,6 +231,12 @@ print a;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -210,6 +261,12 @@ print a;
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::loxfunction::LoxFunction;
+use crate::token::Token;
 use crate::{environment::Environment, error::RuntimeError, expr::ENode, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
 #[derive(Debug, Clone)]
@@ -128,6 +129,7 @@ impl Interpreter {
     }
 
     pub fn resolve(&mut self, expr: &ENode, depth: usize) {
+        //println!("resolve id={} depth={}", expr.id, depth);
         self.locals.insert(expr.id, depth);
     }
 
@@ -361,13 +363,34 @@ impl Interpreter {
                 }
             },
             Expr::Variable{name} => {
-                self.environment.borrow().get(name.clone())
+                self.look_up_variable(&name, expr)
             },
             Expr::Assign{name, value} => {
                 let value = self.evaluate(value)?;
-                self.environment.borrow_mut().assign(name.clone(), value.clone())?;
+                // self.environment.borrow_mut().assign(name.clone(), value.clone())?;
+                let distance = self.locals.get(&expr.id);
+                match distance {
+                    Some(dist) => {
+                        self.environment.borrow_mut().assign_at(*dist, name, &value)?;
+                    },
+                    None => {
+                        self.globals.borrow_mut().assign(name, &value)?;
+                    },
+                }
                 Ok(value)
             },
+        }
+    }
+
+    fn look_up_variable(&mut self, name: &Token, expr: &ENode) -> Result<Value, RuntimeError> {
+        let distance = self.locals.get(&expr.id);
+        match distance {
+            Some(dist) => {
+                self.environment.borrow_mut().get_at(*dist, &name.lexeme)
+            },
+            None => {
+                self.globals.borrow_mut().get(name)
+            }
         }
     }
 }
@@ -376,7 +399,7 @@ impl Interpreter {
 mod tests {
 
     use super::*;
-    use crate::{parser::Parser, scanner::Scanner, token::Token};
+    use crate::{parser::Parser, resolver::Resolver, scanner::Scanner, token::Token};
 
     #[test]
     fn interpret_math() -> Result<(), Box<dyn std::error::Error>> {
@@ -391,6 +414,12 @@ mod tests {
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -412,6 +441,12 @@ mod tests {
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
 
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
         interpreter.interpret(expression)?;
 
         assert_eq!("true\n", interpreter.result);
@@ -431,6 +466,12 @@ mod tests {
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -459,6 +500,12 @@ for (var b = 1; a < 10000; b = temp + b) {
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -511,6 +558,12 @@ for (var b = 1; a < 10000; b = temp + b) {
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
 
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
         interpreter.interpret(expression)?;
 
         assert_eq!(
@@ -542,6 +595,12 @@ for (var b = 1; a < 10000; b = temp + b) {
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -575,6 +634,12 @@ for (var b = 1; a < 10000; b = temp + b) {
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
 
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
         interpreter.interpret(expression)?;
 
         assert_eq!("hi\nyes\n", interpreter.result);
@@ -599,6 +664,12 @@ add(1, 2, 3);
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -625,6 +696,12 @@ print add;
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
 
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
         interpreter.interpret(expression)?;
 
         assert_eq!("<fn add>\n", interpreter.result);
@@ -649,6 +726,12 @@ sayHi(\"Dear\", \"Reader\");
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -678,6 +761,12 @@ for (var i = 0; i < 20; i = i + 1) {
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 
@@ -734,6 +823,12 @@ counter();
         let mut parser: Parser = Parser::new(tokens);
         let expression = parser.parse()?;
         let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         interpreter.interpret(expression)?;
 

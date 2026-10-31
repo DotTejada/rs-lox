@@ -1,6 +1,6 @@
 use std::{env, fs::read_to_string, io::{self, Write}};
 
-use rs_lox::{interpreter::Interpreter, parser::Parser, scanner::Scanner, token::Token};
+use rs_lox::{interpreter::Interpreter, parser::Parser, resolver::Resolver, scanner::Scanner, token::Token};
 
 struct Lox {
     interpreter: Interpreter
@@ -21,6 +21,12 @@ impl Lox {
 
         let mut parser: Parser = Parser::new(tokens);
         let statements = parser.parse()?;
+
+        let mut resolver: Resolver = Resolver::new(&mut self.interpreter);
+        resolver.resolve_stmts(&statements);
+        if resolver.had_error {
+            return Ok(());
+        }
 
         self.interpreter.interpret(statements)?;
 
