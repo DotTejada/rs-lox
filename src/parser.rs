@@ -3,6 +3,7 @@ use crate::{error::{ParseError, error_token}, expr::{ENode, Expr}, stmt::{Functi
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
+    pub had_error: bool,
 }
 
 #[allow(dead_code)]
@@ -12,6 +13,7 @@ impl Parser {
         Self {
             tokens,
             current: 0,
+            had_error: false,
         }
     }
 
@@ -275,7 +277,9 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
     fn block(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut statements: Vec<Stmt> = Vec::new();
         while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
-            statements.push(self.declaration()?);
+            if let Some(d) = self.declaration() {
+                statements.push(d);
+            }
         }
         self.consume(TokenType::RightBrace, "Expect '}' after block.".to_string())?;
         Ok(statements)
@@ -359,21 +363,32 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
         Ok(Stmt::While{condition, body: Box::new(body)})
     }
 
-    fn declaration(&mut self) -> Result<Stmt, ParseError> {
-        if self.match_token(&[TokenType::Fun]) {
-            return self.function("function");
+    fn declaration(&mut self) -> Option<Stmt> {
+        let result = if self.match_token(&[TokenType::Fun]) {
+            self.function("function")
+        } else if self.match_token(&[TokenType::Var]) {
+            self.var_decl()
+        } else {
+            self.statement()
+        };
+
+        match result {
+            Ok(stmt) => Some(stmt),
+            Err(err) => {
+                println!("{}", err);
+                self.had_error = true;
+                self.synchronize();
+                None
+            }
         }
-        if self.match_token(&[TokenType::Var]) {
-            return self.var_decl();
-        }
-        self.statement()
-        //synchronize if got an error
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {
         let mut statements: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.declaration()?);
+            if let Some(d) = self.declaration() {
+                statements.push(d);
+            }
         }
         Ok(statements)
     }

@@ -21,6 +21,9 @@ impl Lox {
 
         let mut parser: Parser = Parser::new(tokens);
         let statements = parser.parse()?;
+        if parser.had_error {
+            return Ok(());
+        }
 
         let mut resolver: Resolver = Resolver::new(&mut self.interpreter);
         resolver.resolve_stmts(&statements);
