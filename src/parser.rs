@@ -66,6 +66,9 @@ impl Parser {
                 Expr::Variable{name} => {
                     Ok(ENode::new(Expr::Assign{name, value: Box::new(value) }))
                 },
+                Expr::Get{ object, name } => {
+                    Ok(ENode::new(Expr::Set{object, name, value: Box::new(value) }))
+                },
                 _ => {
                     Err(ParseError{token: equals, message: "Invalid assignment target.".to_string()})
                 }
@@ -164,6 +167,9 @@ impl Parser {
         loop {
             if self.match_token(&[TokenType::LeftParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(&[TokenType::Dot]) {
+                let name = self.consume(TokenType::Identifier, format!("Expect property name after '.'."))?;
+                expr = ENode::new(Expr::Get{object: Box::new(expr), name: name});
             } else {
                 break;
             }
@@ -177,6 +183,10 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
         if self.match_token(&[TokenType::Nil]) { return Ok(ENode::new(Expr::Literal{value: Literal::Nil})); }
 
         if self.match_token(&[TokenType::Number, TokenType::String]) { return Ok(ENode::new(Expr::Literal{value: self.previous().literal.unwrap() })); }
+
+        if self.match_token(&[TokenType::This]) {
+            return Ok(ENode::new(Expr::This{keyword: self.previous()}));
+        }
 
         if self.match_token(&[TokenType::Identifier]) {
             return Ok(ENode::new(Expr::Variable{name: self.previous()}));
@@ -225,7 +235,7 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
         Ok(Stmt::Expression{expression: expr})
     }
 
-    fn function(&mut self, kind: &str) -> Result<Stmt, ParseError> {
+    fn function(&mut self, kind: &str) -> Result<Function, ParseError> {
         let name: Token = self.consume(TokenType::Identifier, format!("Expect {} name.", kind))?;
         self.consume(TokenType::LeftParen, format!("Expect '(' after {} name.", kind))?;
         let mut parameters: Vec<Token> = Vec::new();
@@ -243,7 +253,7 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
         self.consume(TokenType::RightParen, "Expect ')' after parameters.".to_string())?;
         self.consume(TokenType::LeftBrace, format!("Expect '{{' before {} body.", kind))?;
         let body: Vec<Stmt> = self.block()?;
-        Ok(Stmt::Function(Function{name, params: parameters, body}))
+        Ok(Function{name, params: parameters, body})
     }
 
     fn print_stmt(&mut self) -> Result<Stmt, ParseError> {
@@ -364,8 +374,10 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
     }
 
     fn declaration(&mut self) -> Option<Stmt> {
-        let result = if self.match_token(&[TokenType::Fun]) {
-            self.function("function")
+        let result = if self.match_token(&[TokenType::Class]) {
+            self.class_declaration()
+        } else if self.match_token(&[TokenType::Fun]) {
+            self.function("function").map(Stmt::Function)
         } else if self.match_token(&[TokenType::Var]) {
             self.var_decl()
         } else {
@@ -381,6 +393,17 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
                 None
             }
         }
+    }
+
+    fn class_declaration(&mut self) -> Result<Stmt, ParseError> {
+        let name: Token = self.consume(TokenType::Identifier, format!("Expect class name."))?;
+        self.consume(TokenType::LeftBrace, format!("Expect '{{' before class body."))?;
+        let mut methods: Vec<Function> = Vec::new();
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            methods.push(self.function("method")?);
+        }
+        self.consume(TokenType::RightBrace, format!("Expect '}}' before class body."))?;
+        Ok(Stmt::Class{name, methods})
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {

@@ -2,10 +2,18 @@ use std::collections::HashMap;
 
 use crate::{error::error_token, expr::ENode, expr::Expr, interpreter::Interpreter, stmt::{Function, Stmt}, token::Token};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 enum FunctionType {
     None,
     Function,
+    Initializer,
+    Method,
+}
+
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
+enum ClassType {
+    None,
+    Class,
 }
 
 pub struct Resolver<'a> {
@@ -13,6 +21,7 @@ pub struct Resolver<'a> {
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
     pub had_error: bool,
+    current_class: ClassType,
 }
 
 impl<'a> Resolver<'a> {
@@ -23,6 +32,7 @@ impl<'a> Resolver<'a> {
             scopes: Vec::new(),
             current_function: FunctionType::None,
             had_error: false,
+            current_class: ClassType::None,
         }
     }
 
@@ -56,6 +66,23 @@ impl<'a> Resolver<'a> {
                 self.resolve_stmts(statements);
                 self.end_scope();
             },
+            Stmt::Class { name, methods } => {
+                let enclosing_class = self.current_class;
+                self.current_class = ClassType::Class;
+                self.declare(name);
+                self.define(name);
+                self.begin_scope();
+                self.scopes.last_mut().unwrap().insert("this".to_string(), true);
+                for method in methods {
+                    let mut declaration = FunctionType::Method;
+                    if method.name.lexeme == "init" {
+                        declaration = FunctionType::Initializer;
+                    }
+                    self.resolve_func(method, declaration);
+                }
+                self.end_scope();
+                self.current_class = enclosing_class;
+            },
             Stmt::Var { name, initializer } => {
                 self.declare(name);
                 if let Some(init) = initializer {
@@ -81,8 +108,11 @@ impl<'a> Resolver<'a> {
             Stmt::Print { expression } => {
                 self.resolve_expr(expression);
             },
-            Stmt::Return { keyword: _, value } => {
+            Stmt::Return { keyword, value } => {
                 if let Some(v) = value {
+                    if self.current_function == FunctionType::Initializer {
+                        error_token(keyword.clone(), "Can't return a value from an initializer.");
+                    }
                     self.resolve_expr(v);
                 }
             },
@@ -109,6 +139,9 @@ impl<'a> Resolver<'a> {
                     self.resolve_expr(arg);
                 }
             },
+            Expr::Get { object, name: _ } => {
+                self.resolve_expr(object);
+            },
             Expr::Grouping { expression } => {
                 self.resolve_expr(expression);
             },
@@ -117,6 +150,18 @@ impl<'a> Resolver<'a> {
                 self.resolve_expr(left);
                 self.resolve_expr(right);
             },
+            Expr::Set { object, name: _, value } => {
+                self.resolve_expr(value);
+                self.resolve_expr(object);
+            },
+            Expr::This { keyword } => {
+                if self.current_class == ClassType::None {
+                    error_token(keyword.clone(), "Can't use 'this' outside of a class.");
+                    self.had_error = true;
+                    return;
+                }
+                self.resolve_local(expr, keyword);
+            }
             Expr::Unary { operator: _, right } => {
                 self.resolve_expr(right);
             },

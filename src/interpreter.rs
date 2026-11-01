@@ -3,7 +3,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::loxclass::LoxClass;
 use crate::loxfunction::LoxFunction;
+use crate::loxinstance::LoxInstance;
 use crate::token::Token;
 use crate::{environment::Environment, error::RuntimeError, expr::ENode, expr::Expr, stmt::Stmt, token::Literal, tokentype::TokenType};
 
@@ -14,6 +16,8 @@ pub enum Value {
     Bool(bool),
     Fn(NativeFunction),
     LoxFn(LoxFunction),
+    Class(Rc<LoxClass>),
+    LoxInstance(Rc<RefCell<LoxInstance>>),
     Nil,
 }
 
@@ -34,6 +38,12 @@ impl fmt::Display for Value {
             },
             Value::LoxFn(lox_fn) => {
                 write!(f, "{}", lox_fn)
+            },
+            Value::Class(klass) => {
+                write!(f, "{}", klass)
+            },
+            Value::LoxInstance(instance) => {
+                write!(f, "{}", instance.borrow())
             },
             Value::Nil => {
                 write!(f, "nil")
@@ -163,7 +173,7 @@ impl Interpreter {
                 self.evaluate(&expression)?;
             },
             Stmt::Function(func) => {
-                let function: LoxFunction = LoxFunction::new(func.clone(), self.environment.clone());
+                let function: LoxFunction = LoxFunction::new(func.clone(), self.environment.clone(), false);
                 self.environment.borrow_mut().define(func.name.lexeme.clone(), Value::LoxFn(function));
             },
             Stmt::If {condition, then_branch, else_branch} => {
@@ -206,7 +216,17 @@ impl Interpreter {
                     Environment::from(Rc::clone(&self.environment))
                 ));
                 self.execute_block(statements, environment)?;
-            }
+            },
+            Stmt::Class {name, methods} => {
+                self.environment.borrow_mut().define(name.lexeme.clone(), Value::Nil);
+                let mut klass_methods = HashMap::new();
+                for method in methods {
+                    let function = LoxFunction::new(method.clone(), Rc::clone(&self.environment), method.name.lexeme == "init");
+                    klass_methods.insert(method.name.lexeme.clone(), function);
+                }
+                let klass = Value::Class(LoxClass::new(name.lexeme.clone(), klass_methods));
+                self.environment.borrow_mut().assign(name, &klass)?;
+            },
         }
         Ok(())
     }
@@ -305,9 +325,28 @@ impl Interpreter {
                         }
                         lox_fn.call(self, &args)
                     },
+                    Value::Class(klass) => {
+                        if arguments.len() != klass.arity() {
+                            return Err(RuntimeError{
+                                token: paren.clone(),
+                                message: format!("Expected {} arguments but got {}.", klass.arity(), arguments.len())
+                            })
+                        }
+                        klass.call(self, &args)
+                    },
                     _ => {
                         Err(RuntimeError{token: paren.clone(), message: "Can only call functions and classes.".to_string()})
                     }
+                }
+            },
+            Expr::Get { object, name } => {
+                if let Value::LoxInstance(instance) = self.evaluate(object)? {
+                    return LoxInstance::get(&instance, name);
+                } else {
+                    return Err(RuntimeError{
+                        token: name.clone(),
+                        message: format!("Only instances have properties.")
+                    })
                 }
             },
             Expr::Grouping{expression} => {
@@ -344,6 +383,17 @@ impl Interpreter {
                     }
                 }
                 self.evaluate(right)
+            },
+            Expr::Set { object, name, value } => {
+                if let Value::LoxInstance(instance) = self.evaluate(object)? {
+                    let val = self.evaluate(value)?;
+                    instance.borrow_mut().set(name, &val);
+                    return Ok(val);
+                }
+                Err(RuntimeError{token: name.clone(), message: "Only instances have fields.".to_string()})
+            },
+            Expr::This { keyword } => {
+                self.look_up_variable(keyword, expr)
             },
             Expr::Unary{operator, right} => {
                 let right = self.evaluate(right)?;

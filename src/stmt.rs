@@ -12,11 +12,11 @@ pub enum Stmt {
     Block {
         statements: Vec<Stmt>,
     },
-    //Class {
-    //    name: Token,
-    //    superclass: Box<ENode>,
-    //    methods: Vec<Box<Stmt>>,
-    //},
+    Class {
+        name: Token,
+        // superclass: Box<ENode>,
+        methods: Vec<Function>,
+    },
     Expression {
         expression: ENode,
     },

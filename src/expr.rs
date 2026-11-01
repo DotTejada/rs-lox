@@ -26,10 +26,10 @@ pub enum Expr {
         paren: Token,
         arguments: Vec<ENode>,
     },
-    //Get {
-    //    object: Box<Expr>,
-    //    name: Token,
-    //},
+    Get {
+        object: Box<ENode>,
+        name: Token,
+    },
     Grouping {
         expression: Box<ENode>,
     },
@@ -41,18 +41,18 @@ pub enum Expr {
         operator: Token,
         right: Box<ENode>,
     },
-    //Set {
-    //    object: Box<Expr>,
-    //    name: Token,
-    //    value: Box<Expr>,
-    //},
+    Set {
+        object: Box<ENode>,
+        name: Token,
+        value: Box<ENode>,
+    },
     //Super {
     //    keyword: Token,
     //    method: Token,
     //},
-    //This {
-    //    keyword: Token,
-    //},
+    This {
+        keyword: Token,
+    },
     Unary {
         operator: Token,
         right: Box<ENode>,
@@ -61,20 +61,6 @@ pub enum Expr {
         name: Token,
     },
 }
-
-//impl Hash for ENode {
-//    fn hash<H: Hasher>(&self, state: &mut H) {
-//        self.id.hash(state);
-//    }
-//}
-//
-//impl PartialEq for ENode {
-//    fn eq(&self, other: &Self) -> bool {
-//        self.id == other.id
-//    }
-//}
-//
-//impl Eq for ENode {}
 
 impl ENode {
     pub fn new(expr: Expr) -> Self {

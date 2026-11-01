@@ -9,3 +9,5 @@ pub mod stmt;
 pub mod environment;
 pub mod loxfunction;
 pub mod resolver;
+pub mod loxclass;
+pub mod loxinstance;
