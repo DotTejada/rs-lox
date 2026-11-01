@@ -1,43 +1,1121 @@
 
-running 28 tests
-test environment::tests::env_redefinition ... ok
+running 37 tests
 test environment::tests::env_first_second ... ok
-test environment::tests::env_shadowing ... ok
+test environment::tests::env_redefinition ... ok
 test environment::tests::env_simple ... ok
+test environment::tests::env_shadowing ... ok
 test expr::tests::ast_example ... ok
 test environment::tests::env_simple_enclosing ... ok
 test expr::tests::ast_simple ... ok
 test interpreter::tests::function_add ... ok
 test interpreter::tests::function_add_print ... ok
 test interpreter::tests::function_counter ... ok
-test interpreter::tests::function_sayhi ... ok
 test interpreter::tests::interpret_eq ... ok
-test parser::tests::parse_logic ... ok
-test interpreter::tests::interpret_fib ... ok
-test scanner::tests::scan_comment ... ok
+test interpreter::tests::function_sayhi ... ok
 test interpreter::tests::interpret_strconcat ... ok
-test interpreter::tests::interpret_truthiness ... ok
-test resolver::tests::env_redefinition ... ok
-test scanner::tests::scan_string ... ok
-test scanner::tests::scan_multichar_tokens ... ok
-test parser::tests::parse_unary ... ok
-test scanner::tests::scan_loop ... ok
-test scanner::tests::scan_math ... ok
-test parser::tests::parse_math ... ok
-test interpreter::tests::interpret_while ... ok
 test interpreter::tests::interpret_cstylefor ... ok
+test interpreter::tests::interpret_truthiness ... ok
 test interpreter::tests::interpret_math ... ok
+test loxclass::tests::devonshire_cream ... ok
+test interpreter::tests::interpret_fib ... ok
+test loxclass::tests::bacon ... ok
+test loxclass::tests::bagel ... ok
+test parser::tests::parse_unary ... ok
+test parser::tests::parse_logic ... ok
+test loxclass::tests::egotist ... ok
+test scanner::tests::scan_loop ... ok
+test loxclass::tests::thing ... ok
+test loxclass::tests::box_class ... ok
+test scanner::tests::scan_comment ... ok
+test scanner::tests::scan_multichar_tokens ... ok
+test scanner::tests::scan_string ... ok
+test interpreter::tests::interpret_while ... ok
+test resolver::tests::env_redefinition ... ok
+test parser::tests::parse_math ... ok
+test loxclass::tests::foo_class ... ok
+test scanner::tests::scan_math ... ok
+test loxclass::tests::person ... ok
+test loxclass::tests::cake ... ok
 test interpreter::tests::function_fib ... ok
 
-test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+successes:
+
+---- environment::tests::env_first_second stdout ----
+===== test: env_first_second =====
+[src/environment.rs:186:9]
+Input:
+{
+    var a = "first";
+    print a;
+}
+{
+    var b = "second";
+    print b;
+}
+=====
+Output:
+first
+second
+
+---- environment::tests::env_redefinition stdout ----
+===== test: env_redefinition =====
+[src/environment.rs:250:9]
+Input:
+var a = 1;
+a = 2;
+print a;
+=====
+Output:
+2
+
+---- environment::tests::env_simple stdout ----
+===== test: env_simple =====
+[src/environment.rs:221:9]
+Input:
+var a = 1;
+print a;
+=====
+Output:
+1
+
+---- environment::tests::env_shadowing stdout ----
+===== test: env_shadowing =====
+[src/environment.rs:96:9]
+Input:
+var a = "global a";
+var b = "global b";
+var c = "global c";
+{
+  var a = "outer a";
+  var b = "outer b";
+  {
+    var a = "inner a";
+    print a;
+    print b;
+    print c;
+  }
+  print a;
+  print b;
+  print c;
+}
+print a;
+print b;
+print c;
+=====
+Output:
+inner a
+outer b
+global c
+outer a
+outer b
+global c
+global a
+global b
+global c
+
+---- expr::tests::ast_example stdout ----
+===== test: ast_example =====
+[src/expr.rs:137:9]
+Input:
+ENode {
+    id: 35,
+    expr: Binary {
+        left: ENode {
+            id: 32,
+            expr: Unary {
+                operator: Token {
+                    kind: Minus,
+                    lexeme: "-",
+                    literal: None,
+                    line: 1,
+                },
+                right: ENode {
+                    id: 31,
+                    expr: Literal {
+                        value: Number(
+                            123.0,
+                        ),
+                    },
+                },
+            },
+        },
+        operator: Token {
+            kind: Star,
+            lexeme: "*",
+            literal: None,
+            line: 1,
+        },
+        right: ENode {
+            id: 34,
+            expr: Grouping {
+                expression: ENode {
+                    id: 33,
+                    expr: Literal {
+                        value: Number(
+                            45.67,
+                        ),
+                    },
+                },
+            },
+        },
+    },
+}
+=====
+Output: (* (- 123) (group 45.67))
+
+---- environment::tests::env_simple_enclosing stdout ----
+===== test: env_simple_enclosing =====
+[src/environment.rs:153:9]
+Input:
+var global = "outside";
+{
+    var local = "inside";
+    print global + local;
+}
+=====
+Output:
+outsideinside
+
+---- expr::tests::ast_simple stdout ----
+===== test: ast_simple =====
+[src/expr.rs:123:9]
+Input:
+ENode {
+    id: 38,
+    expr: Binary {
+        left: ENode {
+            id: 36,
+            expr: Literal {
+                value: Number(
+                    1.0,
+                ),
+            },
+        },
+        operator: Token {
+            kind: Plus,
+            lexeme: "+",
+            literal: None,
+            line: 1,
+        },
+        right: ENode {
+            id: 37,
+            expr: Literal {
+                value: Number(
+                    2.0,
+                ),
+            },
+        },
+    },
+}
+=====
+Output: (+ 1 2)
+
+---- interpreter::tests::function_add stdout ----
+===== test: function_add =====
+[src/interpreter.rs:702:9]
+Input:
+fun add(a, b, c) {
+    print a + b + c;
+}
+add(1, 2, 3);
+=====
+Output:
+6
+
+---- interpreter::tests::function_add_print stdout ----
+===== test: function_add =====
+[src/interpreter.rs:733:9]
+Input:
+fun add(a, b, c) {
+    print a + b + c;
+}
+print add;
+=====
+Output:
+<fn add>
+
+---- interpreter::tests::function_counter stdout ----
+===== test: function_counter =====
+[src/interpreter.rs:852:9]
+Input:
+fun makeCounter() {
+    var i = 0;
+    fun count() {
+        i = i + 1;
+        print i;
+    }
+
+    return count;
+}
+
+var counter = makeCounter();
+counter();
+counter();
+=====
+Output:
+1
+2
+
+---- interpreter::tests::interpret_eq stdout ----
+===== test: interpret_eq =====
+[src/interpreter.rs:483:9]
+Input:
+print (42 + 5) == 47;
+=====
+Output:
+true
+
+---- interpreter::tests::function_sayhi stdout ----
+===== test: function_sayhi =====
+[src/interpreter.rs:764:9]
+Input:
+fun sayHi(first, last) {
+    print "Hi, " + first + " " + last + "!";
+}
+sayHi("Dear", "Reader");
+=====
+Output:
+Hi, Dear Reader!
+
+---- interpreter::tests::interpret_strconcat stdout ----
+===== test: interpret_strconcat =====
+[src/interpreter.rs:509:9]
+Input:
+print "hello" + " world";
+=====
+Output:
+hello world
+
+---- interpreter::tests::interpret_cstylefor stdout ----
+===== test: interpret_cstylefor =====
+[src/interpreter.rs:638:9]
+Input:
+for (var i = 0; i < 10; i = i + 1) print i;=====
+Output:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+---- interpreter::tests::interpret_truthiness stdout ----
+===== test: interpret_cstylefor =====
+[src/interpreter.rs:676:9]
+Input:
+print "hi" or 2;
+print nil or "yes";
+=====
+Output:
+hi
+yes
+
+---- interpreter::tests::interpret_math stdout ----
+===== test: interpret_math =====
+[src/interpreter.rs:457:9]
+Input:
+print 34.56 * 3 - 21 / 2 + 54.23 - 90;
+=====
+Output:
+57.41
+
+---- loxclass::tests::devonshire_cream stdout ----
+===== test: devonshire_cream =====
+[src/loxclass.rs:61:9]
+Input:
+class DevonshireCream {
+  serveOn() {
+    return "Scones";
+  }
+}
+
+print DevonshireCream; // Prints "DevonshireCream".
+=====
+Output:
+DevonshireCream
+
+---- interpreter::tests::interpret_fib stdout ----
+===== test: interpret_fib =====
+[src/interpreter.rs:535:9]
+Input:
+var a = 0;
+var temp;
+for (var b = 1; a < 10000; b = temp + b) {
+    print a;
+    temp = a;
+    a = b;
+}
+=====
+Output:
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+6765
+
+---- loxclass::tests::bacon stdout ----
+===== test: bacon =====
+[src/loxclass.rs:125:9]
+Input:
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+
+Bacon().eat(); // Prints "Crunch crunch crunch!".
+=====
+Output:
+Crunch crunch crunch!
+
+---- loxclass::tests::bagel stdout ----
+===== test: bagel =====
+[src/loxclass.rs:95:9]
+Input:
+class Bagel {}
+var bagel = Bagel();
+print bagel; // Prints "Bagel instance".
+=====
+Output:
+Bagel instance
+
+---- parser::tests::parse_unary stdout ----
+===== test: parse_unary =====
+[src/parser.rs:429:9]
+Input:
+!true == -97 + 38;
+=====
+Output: (== (! true) (+ (- 97) 38))
+
+---- parser::tests::parse_logic stdout ----
+===== test: parse_logic =====
+[src/parser.rs:485:9]
+Input:
+true != false == ( true == false );
+=====
+Output: (== (!= true false) (group (== true false)))
+
+---- loxclass::tests::egotist stdout ----
+===== test: egotist =====
+[src/loxclass.rs:159:9]
+Input:
+class Egotist {
+  speak() {
+    print this;
+  }
+}
+
+var method = Egotist().speak;
+method();
+=====
+Output:
+Egotist instance
+
+---- scanner::tests::scan_loop stdout ----
+===== test: scan_loop =====
+[src/scanner.rs:325:9]
+Input:
+for (var a = 1; a < 10; a = a + 1) {
+  print a;
+}
+=====
+Output: [
+    Token {
+        kind: For,
+        lexeme: "for",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: LeftParen,
+        lexeme: "(",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Var,
+        lexeme: "var",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Equal,
+        lexeme: "=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Number,
+        lexeme: "1",
+        literal: Some(
+            Number(
+                1.0,
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Less,
+        lexeme: "<",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Number,
+        lexeme: "10",
+        literal: Some(
+            Number(
+                10.0,
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Equal,
+        lexeme: "=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Plus,
+        lexeme: "+",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Number,
+        lexeme: "1",
+        literal: Some(
+            Number(
+                1.0,
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: RightParen,
+        lexeme: ")",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: LeftBrace,
+        lexeme: "{",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Print,
+        lexeme: "print",
+        literal: None,
+        line: 2,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 2,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 2,
+    },
+    Token {
+        kind: RightBrace,
+        lexeme: "}",
+        literal: None,
+        line: 3,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 3,
+    },
+]
+
+---- loxclass::tests::thing stdout ----
+===== test: thing =====
+[src/loxclass.rs:231:9]
+Input:
+class Thing {
+  getCallback() {
+    fun localFunction() {
+      print this;
+    }
+
+    return localFunction;
+  }
+}
+
+var callback = Thing().getCallback();
+callback();
+=====
+Output:
+Thing instance
+
+---- loxclass::tests::box_class stdout ----
+===== test: box_class =====
+[src/loxclass.rs:311:9]
+Input:
+class Box {}
+
+fun notMethod(argument) {
+  print "called function with " + argument;
+}
+
+var box = Box();
+box.function = notMethod;
+box.function("argument");
+=====
+Output:
+called function with argument
+
+---- scanner::tests::scan_comment stdout ----
+===== test: scan_comment =====
+[src/scanner.rs:253:9]
+Input:
+// this is a comment
+=====
+Output: [
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- scanner::tests::scan_multichar_tokens stdout ----
+===== test: scan_multichar_tokens =====
+[src/scanner.rs:292:9]
+Input:
+a <= b; b >= c; c != d; d == e;
+=====
+Output: [
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: LessEqual,
+        lexeme: "<=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: GreaterEqual,
+        lexeme: ">=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: BangEqual,
+        lexeme: "!=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: EqualEqual,
+        lexeme: "==",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "e",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- scanner::tests::scan_string stdout ----
+===== test: scan_string =====
+[src/scanner.rs:270:9]
+Input:
+var foo = "hello";
+=====
+Output: [
+    Token {
+        kind: Var,
+        lexeme: "var",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "foo",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Equal,
+        lexeme: "=",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: String,
+        lexeme: "\"hello\"",
+        literal: Some(
+            Str(
+                "hello",
+            ),
+        ),
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- interpreter::tests::interpret_while stdout ----
+===== test: interpret_while =====
+[src/interpreter.rs:592:9]
+Input:
+{
+    var i = 0;
+    while (i < 10) {
+        print i;
+        i = i + 1;
+    }
+}
+=====
+Output:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+---- resolver::tests::env_redefinition stdout ----
+===== test: env_redefinition =====
+[src/resolver.rs:226:9]
+Input:
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA();
+  var a = "block";
+  showA();
+}
+=====
+Output:
+global
+global
+
+---- parser::tests::parse_math stdout ----
+===== test: parse_math =====
+[src/parser.rs:457:9]
+Input:
+12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;
+=====
+Output: (+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))
+
+---- loxclass::tests::foo_class stdout ----
+===== test: foo_class =====
+[src/loxclass.rs:347:9]
+Input:
+class Foo {
+  init() {
+    print this;
+  }
+}
+
+var foo = Foo();
+print foo.init();
+=====
+Output:
+Foo instance
+Foo instance
+Foo instance
+
+---- scanner::tests::scan_math stdout ----
+===== test: scan_math =====
+[src/scanner.rs:220:9]
+Input:
+a + b; b - c; c / d; d * e;
+=====
+Output: [
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Plus,
+        lexeme: "+",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Minus,
+        lexeme: "-",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Star,
+        lexeme: "*",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "e",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
+
+---- loxclass::tests::person stdout ----
+===== test: person =====
+[src/loxclass.rs:270:9]
+Input:
+class Person {
+  sayName() {
+    print this.name;
+  }
+}
+
+var jane = Person();
+jane.name = "Jane";
+
+var bill = Person();
+bill.name = "Bill";
+
+bill.sayName = jane.sayName;
+bill.sayName(); // ?
+=====
+Output:
+Jane
+
+---- loxclass::tests::cake stdout ----
+===== test: cake =====
+[src/loxclass.rs:194:9]
+Input:
+class Cake {
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
+  }
+}
+
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste(); // Prints "The German chocolate cake is delicious!".
+=====
+Output:
+The German chocolate cake is delicious!
+
+---- interpreter::tests::function_fib stdout ----
+===== test: function_fib =====
+[src/interpreter.rs:795:9]
+Input:
+fun fib(n) {
+    if (n <= 1) return n;
+    return fib(n - 2) + fib(n - 1);
+}
+
+for (var i = 0; i < 20; i = i + 1) {
+    print fib(i);
+}
+=====
+Output:
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+233
+377
+610
+987
+1597
+2584
+4181
+
+
+successes:
+    environment::tests::env_first_second
+    environment::tests::env_redefinition
+    environment::tests::env_shadowing
+    environment::tests::env_simple
+    environment::tests::env_simple_enclosing
+    expr::tests::ast_example
+    expr::tests::ast_simple
+    interpreter::tests::function_add
+    interpreter::tests::function_add_print
+    interpreter::tests::function_counter
+    interpreter::tests::function_fib
+    interpreter::tests::function_sayhi
+    interpreter::tests::interpret_cstylefor
+    interpreter::tests::interpret_eq
+    interpreter::tests::interpret_fib
+    interpreter::tests::interpret_math
+    interpreter::tests::interpret_strconcat
+    interpreter::tests::interpret_truthiness
+    interpreter::tests::interpret_while
+    loxclass::tests::bacon
+    loxclass::tests::bagel
+    loxclass::tests::box_class
+    loxclass::tests::cake
+    loxclass::tests::devonshire_cream
+    loxclass::tests::egotist
+    loxclass::tests::foo_class
+    loxclass::tests::person
+    loxclass::tests::thing
+    parser::tests::parse_logic
+    parser::tests::parse_math
+    parser::tests::parse_unary
+    resolver::tests::env_redefinition
+    scanner::tests::scan_comment
+    scanner::tests::scan_loop
+    scanner::tests::scan_math
+    scanner::tests::scan_multichar_tokens
+    scanner::tests::scan_string
+
+test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
 
 
 running 0 tests
+
+successes:
+
+successes:
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
 
 running 0 tests
+
+successes:
+
+successes:
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
