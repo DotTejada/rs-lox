@@ -14,6 +14,7 @@ enum FunctionType {
 enum ClassType {
     None,
     Class,
+    Subclass,
 }
 
 pub struct Resolver<'a> {
@@ -66,11 +67,25 @@ impl<'a> Resolver<'a> {
                 self.resolve_stmts(statements);
                 self.end_scope();
             },
-            Stmt::Class { name, methods } => {
+            Stmt::Class { name, superclass, methods } => {
                 let enclosing_class = self.current_class;
                 self.current_class = ClassType::Class;
                 self.declare(name);
                 self.define(name);
+                if let Some(sc) = superclass && 
+                    let Expr::Variable {name: sc_name} = &sc.expr && 
+                        name.lexeme == sc_name.lexeme {
+                            error_token(sc_name.clone(), "A class can't inherit from itself.");
+                            self.had_error = true;
+                }
+                if let Some(sc) = superclass {
+                    self.current_class = ClassType::Subclass;
+                    self.resolve_expr(sc);
+                }
+                if let Some(_) = superclass {
+                    self.begin_scope();
+                    self.scopes.last_mut().unwrap().insert("super".to_string(), true);
+                }
                 self.begin_scope();
                 self.scopes.last_mut().unwrap().insert("this".to_string(), true);
                 for method in methods {
@@ -81,6 +96,9 @@ impl<'a> Resolver<'a> {
                     self.resolve_func(method, declaration);
                 }
                 self.end_scope();
+                if let Some(_) = superclass {
+                    self.end_scope();
+                }
                 self.current_class = enclosing_class;
             },
             Stmt::Var { name, initializer } => {
@@ -153,6 +171,15 @@ impl<'a> Resolver<'a> {
             Expr::Set { object, name: _, value } => {
                 self.resolve_expr(value);
                 self.resolve_expr(object);
+            },
+            Expr::Super { keyword, method: _ } => {
+                if self.current_class == ClassType::None {
+                    error_token(keyword.clone(), "Can't use 'super' outside of a class.");
+                    self.had_error = true;
+                } else if self.current_class == ClassType::Subclass {
+                    error_token(keyword.clone(), "Can't use 'super' in a class with no superclass.");
+                }
+                self.resolve_local(expr, keyword);
             },
             Expr::This { keyword } => {
                 if self.current_class == ClassType::None {

@@ -6,21 +6,29 @@ use crate::{error::RuntimeError, interpreter::{Callable, Interpreter, Value}, lo
 #[derive(Debug, Clone)]
 pub struct LoxClass {
     name: String,
+    superclass: Option<Rc<LoxClass>>,
     methods: HashMap<String, LoxFunction>,
 }
 
 impl LoxClass {
-    pub fn new(name: String, methods: HashMap<String, LoxFunction>) -> Rc<Self> {
+    pub fn new(name: String, superclass: Option<Rc<LoxClass>>, methods: HashMap<String, LoxFunction>) -> Rc<Self> {
         Rc::new(
             Self {
                 name,
-                methods
+                superclass,
+                methods,
             }
         )
     }
 
     pub fn find_method(&self, name: &String) -> Option<LoxFunction> {
-        self.methods.get(name).cloned()
+        if let Some(found) = self.methods.get(name) {
+            return Some(found).cloned();
+        }
+        if let Some(sc) = &self.superclass {
+            return sc.find_method(name);
+        }
+        None
     }
 }
 

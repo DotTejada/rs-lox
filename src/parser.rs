@@ -184,6 +184,13 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
 
         if self.match_token(&[TokenType::Number, TokenType::String]) { return Ok(ENode::new(Expr::Literal{value: self.previous().literal.unwrap() })); }
 
+        if self.match_token(&[TokenType::Super]) {
+            let keyword = self.previous();
+            self.consume(TokenType::Dot, format!("Expect '.' after 'super'."))?;
+            let method = self.consume(TokenType::Identifier, format!("Expect superclass method name."))?;
+            return Ok(ENode::new(Expr::Super {keyword, method}));
+        }
+
         if self.match_token(&[TokenType::This]) {
             return Ok(ENode::new(Expr::This{keyword: self.previous()}));
         }
@@ -397,13 +404,18 @@ fn primary(&mut self) -> Result<ENode, ParseError> {
 
     fn class_declaration(&mut self) -> Result<Stmt, ParseError> {
         let name: Token = self.consume(TokenType::Identifier, format!("Expect class name."))?;
+        let mut superclass: Option<ENode> = None;
+        if self.match_token(&[TokenType::Less]) {
+            self.consume(TokenType::Identifier, format!("Expect superclass name."))?;
+            superclass = Some(ENode::new(Expr::Variable { name: self.previous() }));
+        }
         self.consume(TokenType::LeftBrace, format!("Expect '{{' before class body."))?;
         let mut methods: Vec<Function> = Vec::new();
         while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
             methods.push(self.function("method")?);
         }
         self.consume(TokenType::RightBrace, format!("Expect '}}' before class body."))?;
-        Ok(Stmt::Class{name, methods})
+        Ok(Stmt::Class{name, superclass, methods})
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, ParseError> {

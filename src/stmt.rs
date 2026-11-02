@@ -14,7 +14,7 @@ pub enum Stmt {
     },
     Class {
         name: Token,
-        // superclass: Box<ENode>,
+        superclass: Option<ENode>,
         methods: Vec<Function>,
     },
     Expression {

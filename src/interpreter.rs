@@ -217,14 +217,41 @@ impl Interpreter {
                 ));
                 self.execute_block(statements, environment)?;
             },
-            Stmt::Class {name, methods} => {
+            Stmt::Class {name, superclass, methods} => {
+                let superclass_val = match superclass {
+                    Some(sc) => {
+                        match self.evaluate(sc)? {
+                            Value::Class(c) => Some(c),
+                            _ => {
+                                // the parser guarantees this is a Variable
+                                let token = match &sc.expr {
+                                    Expr::Variable { name } => name.clone(),
+                                    _ => unreachable!("superclass is always a variable expression"),
+                                };
+                                return Err(RuntimeError {
+                                    token,
+                                    message: "Superclass must be a class.".to_string(),
+                                });
+                            }
+                        }
+                    },
+                    None => None,
+                };
                 self.environment.borrow_mut().define(name.lexeme.clone(), Value::Nil);
+                let class_env = match &superclass_val {
+                    Some(sc) => {
+                        let mut env = Environment::from(Rc::clone(&self.environment));
+                        env.define("super".to_string(), Value::Class(Rc::clone(sc)));
+                        Rc::new(RefCell::new(env))
+                    }
+                    None => Rc::clone(&self.environment),
+                };
                 let mut klass_methods = HashMap::new();
                 for method in methods {
-                    let function = LoxFunction::new(method.clone(), Rc::clone(&self.environment), method.name.lexeme == "init");
+                    let function = LoxFunction::new(method.clone(), Rc::clone(&class_env), method.name.lexeme == "init");
                     klass_methods.insert(method.name.lexeme.clone(), function);
                 }
-                let klass = Value::Class(LoxClass::new(name.lexeme.clone(), klass_methods));
+                let klass = Value::Class(LoxClass::new(name.lexeme.clone(), superclass_val, klass_methods));
                 self.environment.borrow_mut().assign(name, &klass)?;
             },
         }
@@ -391,6 +418,28 @@ impl Interpreter {
                     return Ok(val);
                 }
                 Err(RuntimeError{token: name.clone(), message: "Only instances have fields.".to_string()})
+            },
+            Expr::Super { keyword: _, method: expr_method } => {
+                let distance = self.locals.get(&expr.id).unwrap();
+                let superclass = self.environment.borrow().get_at(*distance, &"super".to_string())?;
+                let object = match self.environment.borrow().get_at(*distance - 1, &"this".to_string())? {
+                    Value::LoxInstance(instance) => instance,
+                    _ => unreachable!("This should be an instance.")
+                };
+                let method = match superclass {
+                    Value::Class(klass) => {
+                        klass.find_method(&expr_method.lexeme)
+                    },
+                    _ => unreachable!("This should be a class.")
+                };
+                match method {
+                    Some(meth) => {
+                        Ok(Value::LoxFn(meth.bind(object)))
+                    },
+                    None => {
+                        Err(RuntimeError{token: expr_method.clone(), message: format!("Undefined property '{}'.", expr_method.lexeme)})
+                    }
+                }
             },
             Expr::This { keyword } => {
                 self.look_up_variable(keyword, expr)

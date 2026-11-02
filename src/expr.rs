@@ -46,10 +46,10 @@ pub enum Expr {
         name: Token,
         value: Box<ENode>,
     },
-    //Super {
-    //    keyword: Token,
-    //    method: Token,
-    //},
+    Super {
+        keyword: Token,
+        method: Token,
+    },
     This {
         keyword: Token,
     },
