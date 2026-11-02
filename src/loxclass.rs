@@ -383,4 +383,127 @@ print foo.init();
         assert_eq!("Foo instance\nFoo instance\nFoo instance\n", interpreter.result);
         Ok(())
     }
+
+    #[test]
+    fn doughnut() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: doughnut =====");
+        dbg!();
+        let source_string = String::from(
+"class Doughnut {
+  cook() {
+    print \"Fry until golden brown.\";
+  }
+}
+
+class BostonCream < Doughnut {}
+
+BostonCream().cook();
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("Fry until golden brown.\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn boston_cream() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: boston_cream =====");
+        dbg!();
+        let source_string = String::from(
+"class Doughnut {
+  cook() {
+    print \"Fry until golden brown.\";
+  }
+}
+
+class BostonCream < Doughnut {
+  cook() {
+    super.cook();
+    print \"Pipe full of custard and coat with chocolate.\";
+  }
+}
+
+BostonCream().cook();
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("Fry until golden brown.\nPipe full of custard and coat with chocolate.\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn abc() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: abc =====");
+        dbg!();
+        let source_string = String::from(
+"class A {
+  method() {
+    print \"A method\";
+  }
+}
+
+class B < A {
+  method() {
+    print \"B method\";
+  }
+
+  test() {
+    super.method();
+  }
+}
+
+class C < B {}
+
+C().test();
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("A method\n", interpreter.result);
+        Ok(())
+    }
 }

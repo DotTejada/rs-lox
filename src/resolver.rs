@@ -176,7 +176,7 @@ impl<'a> Resolver<'a> {
                 if self.current_class == ClassType::None {
                     error_token(keyword.clone(), "Can't use 'super' outside of a class.");
                     self.had_error = true;
-                } else if self.current_class == ClassType::Subclass {
+                } else if self.current_class != ClassType::Subclass {
                     error_token(keyword.clone(), "Can't use 'super' in a class with no superclass.");
                 }
                 self.resolve_local(expr, keyword);
