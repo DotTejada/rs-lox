@@ -209,6 +209,9 @@ impl Interpreter {
             Stmt::While {condition, body} => {
                 while is_truthy(&self.evaluate(&condition)?) {
                     self.execute(body)?;
+                    if self.ret_val.is_some() {
+                        break;
+                    }
                 }
             },
             Stmt::Block { statements } => {
@@ -935,4 +938,72 @@ counter();
         Ok(())
     }
 
+    #[test]
+    fn resolver() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: resolver =====");
+        dbg!();
+        let source_string = String::from(
+"var a = \"global\";
+{
+  fun showA() { print a; }
+  showA();
+  var a = \"block\";
+  showA();
+}
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("global\nglobal\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn early_return() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: early_return =====");
+        dbg!();
+        let source_string = String::from(
+"fun firstSquareOver(limit) {
+  var i = 0;
+  while (true) {
+    if (i * i > limit) return i;
+    i = i + 1;
+  }
+}
+print firstSquareOver(50);
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("8\n", interpreter.result);
+        Ok(())
+    }
 }

@@ -506,4 +506,99 @@ C().test();
         assert_eq!("A method\n", interpreter.result);
         Ok(())
     }
+
+    #[test]
+    fn ann() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: ann =====");
+        dbg!();
+        let source_string = String::from(
+"class Person {
+  init(name) { this.name = name; }
+  greet() { print \"Hi, \" + this.name; }
+}
+Person(\"Ann\").greet();
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("Hi, Ann\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn class_reference() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: class_reference =====");
+        dbg!();
+        let source_string = String::from(
+"class Box {}
+var a = Box();
+var b = a;
+b.x = 1;
+print a.x;
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("1\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn triple_inheritance() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: triple_inheritance =====");
+        dbg!();
+        let source_string = String::from(
+"class A { say() { print \"A\"; } }
+class B < A { say() { super.say(); print \"B\"; } }
+class C < B { say() { super.say(); print \"C\"; } }
+C().say();
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("A\nB\nC\n", interpreter.result);
+        Ok(())
+    }
 }

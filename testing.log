@@ -1,44 +1,49 @@
 
-running 40 tests
+running 45 tests
 test environment::tests::env_redefinition ... ok
 test environment::tests::env_first_second ... ok
-test environment::tests::env_simple ... ok
 test environment::tests::env_shadowing ... ok
-test environment::tests::env_simple_enclosing ... ok
+test environment::tests::env_simple ... ok
 test expr::tests::ast_example ... ok
+test environment::tests::env_simple_enclosing ... ok
+test interpreter::tests::early_return ... ok
 test expr::tests::ast_simple ... ok
+test interpreter::tests::function_counter ... ok
 test interpreter::tests::function_add_print ... ok
 test interpreter::tests::function_add ... ok
-test interpreter::tests::function_counter ... ok
-test interpreter::tests::interpret_cstylefor ... ok
-test interpreter::tests::function_sayhi ... ok
-test interpreter::tests::interpret_math ... ok
-test interpreter::tests::interpret_eq ... ok
-test interpreter::tests::interpret_strconcat ... ok
-test loxclass::tests::thing ... ok
 test interpreter::tests::interpret_fib ... ok
-test loxclass::tests::abc ... ok
-test loxclass::tests::devonshire_cream ... ok
-test loxclass::tests::foo_class ... ok
-test loxclass::tests::egotist ... ok
+test interpreter::tests::interpret_eq ... ok
+test interpreter::tests::interpret_cstylefor ... ok
+test interpreter::tests::interpret_math ... ok
 test interpreter::tests::interpret_truthiness ... ok
-test parser::tests::parse_math ... ok
-test parser::tests::parse_logic ... ok
-test loxclass::tests::bagel ... ok
-test parser::tests::parse_unary ... ok
+test interpreter::tests::resolver ... ok
+test interpreter::tests::function_sayhi ... ok
 test loxclass::tests::bacon ... ok
-test loxclass::tests::doughnut ... ok
-test scanner::tests::scan_math ... ok
-test scanner::tests::scan_multichar_tokens ... ok
-test scanner::tests::scan_comment ... ok
-test scanner::tests::scan_string ... ok
 test interpreter::tests::interpret_while ... ok
-test scanner::tests::scan_loop ... ok
-test loxclass::tests::person ... ok
-test loxclass::tests::box_class ... ok
 test loxclass::tests::boston_cream ... ok
+test loxclass::tests::abc ... ok
 test loxclass::tests::cake ... ok
+test loxclass::tests::egotist ... ok
+test loxclass::tests::devonshire_cream ... ok
+test loxclass::tests::class_reference ... ok
+test loxclass::tests::box_class ... ok
+test loxclass::tests::foo_class ... ok
+test loxclass::tests::triple_inheritance ... ok
+test loxclass::tests::doughnut ... ok
+test parser::tests::parse_unary ... ok
+test interpreter::tests::interpret_strconcat ... ok
+test loxclass::tests::person ... ok
+test loxclass::tests::bagel ... ok
+test scanner::tests::scan_comment ... ok
 test resolver::tests::env_redefinition ... ok
+test parser::tests::parse_math ... ok
+test scanner::tests::scan_multichar_tokens ... ok
+test parser::tests::parse_logic ... ok
+test scanner::tests::scan_string ... ok
+test scanner::tests::scan_loop ... ok
+test loxclass::tests::ann ... ok
+test loxclass::tests::thing ... ok
+test scanner::tests::scan_math ... ok
 test interpreter::tests::function_fib ... ok
 
 successes:
@@ -70,16 +75,6 @@ Input:
 Output:
 first
 second
-
----- environment::tests::env_simple stdout ----
-===== test: env_simple =====
-[src/environment.rs:221:9]
-Input:
-var a = 1;
-print a;
-=====
-Output:
-1
 
 ---- environment::tests::env_shadowing stdout ----
 ===== test: env_shadowing =====
@@ -116,28 +111,25 @@ global a
 global b
 global c
 
----- environment::tests::env_simple_enclosing stdout ----
-===== test: env_simple_enclosing =====
-[src/environment.rs:153:9]
+---- environment::tests::env_simple stdout ----
+===== test: env_simple =====
+[src/environment.rs:221:9]
 Input:
-var global = "outside";
-{
-    var local = "inside";
-    print global + local;
-}
+var a = 1;
+print a;
 =====
 Output:
-outsideinside
+1
 
 ---- expr::tests::ast_example stdout ----
 ===== test: ast_example =====
 [src/expr.rs:137:9]
 Input:
 ENode {
-    id: 35,
+    id: 28,
     expr: Binary {
         left: ENode {
-            id: 32,
+            id: 25,
             expr: Unary {
                 operator: Token {
                     kind: Minus,
@@ -146,7 +138,7 @@ ENode {
                     line: 1,
                 },
                 right: ENode {
-                    id: 31,
+                    id: 24,
                     expr: Literal {
                         value: Number(
                             123.0,
@@ -162,10 +154,10 @@ ENode {
             line: 1,
         },
         right: ENode {
-            id: 34,
+            id: 27,
             expr: Grouping {
                 expression: ENode {
-                    id: 33,
+                    id: 26,
                     expr: Literal {
                         value: Number(
                             45.67,
@@ -179,15 +171,44 @@ ENode {
 =====
 Output: (* (- 123) (group 45.67))
 
+---- environment::tests::env_simple_enclosing stdout ----
+===== test: env_simple_enclosing =====
+[src/environment.rs:153:9]
+Input:
+var global = "outside";
+{
+    var local = "inside";
+    print global + local;
+}
+=====
+Output:
+outsideinside
+
+---- interpreter::tests::early_return stdout ----
+===== test: early_return =====
+[src/interpreter.rs:978:9]
+Input:
+fun firstSquareOver(limit) {
+  var i = 0;
+  while (true) {
+    if (i * i > limit) return i;
+    i = i + 1;
+  }
+}
+print firstSquareOver(50);
+=====
+Output:
+8
+
 ---- expr::tests::ast_simple stdout ----
 ===== test: ast_simple =====
 [src/expr.rs:123:9]
 Input:
 ENode {
-    id: 38,
+    id: 54,
     expr: Binary {
         left: ENode {
-            id: 36,
+            id: 52,
             expr: Literal {
                 value: Number(
                     1.0,
@@ -201,7 +222,7 @@ ENode {
             line: 1,
         },
         right: ENode {
-            id: 37,
+            id: 53,
             expr: Literal {
                 value: Number(
                     2.0,
@@ -213,33 +234,9 @@ ENode {
 =====
 Output: (+ 1 2)
 
----- interpreter::tests::function_add_print stdout ----
-===== test: function_add =====
-[src/interpreter.rs:782:9]
-Input:
-fun add(a, b, c) {
-    print a + b + c;
-}
-print add;
-=====
-Output:
-<fn add>
-
----- interpreter::tests::function_add stdout ----
-===== test: function_add =====
-[src/interpreter.rs:751:9]
-Input:
-fun add(a, b, c) {
-    print a + b + c;
-}
-add(1, 2, 3);
-=====
-Output:
-6
-
 ---- interpreter::tests::function_counter stdout ----
 ===== test: function_counter =====
-[src/interpreter.rs:901:9]
+[src/interpreter.rs:904:9]
 Input:
 fun makeCounter() {
     var i = 0;
@@ -259,85 +256,33 @@ Output:
 1
 2
 
----- interpreter::tests::interpret_cstylefor stdout ----
-===== test: interpret_cstylefor =====
-[src/interpreter.rs:687:9]
+---- interpreter::tests::function_add_print stdout ----
+===== test: function_add =====
+[src/interpreter.rs:785:9]
 Input:
-for (var i = 0; i < 10; i = i + 1) print i;=====
+fun add(a, b, c) {
+    print a + b + c;
+}
+print add;
+=====
 Output:
-0
-1
-2
-3
-4
-5
+<fn add>
+
+---- interpreter::tests::function_add stdout ----
+===== test: function_add =====
+[src/interpreter.rs:754:9]
+Input:
+fun add(a, b, c) {
+    print a + b + c;
+}
+add(1, 2, 3);
+=====
+Output:
 6
-7
-8
-9
-
----- interpreter::tests::function_sayhi stdout ----
-===== test: function_sayhi =====
-[src/interpreter.rs:813:9]
-Input:
-fun sayHi(first, last) {
-    print "Hi, " + first + " " + last + "!";
-}
-sayHi("Dear", "Reader");
-=====
-Output:
-Hi, Dear Reader!
-
----- interpreter::tests::interpret_math stdout ----
-===== test: interpret_math =====
-[src/interpreter.rs:506:9]
-Input:
-print 34.56 * 3 - 21 / 2 + 54.23 - 90;
-=====
-Output:
-57.41
-
----- interpreter::tests::interpret_eq stdout ----
-===== test: interpret_eq =====
-[src/interpreter.rs:532:9]
-Input:
-print (42 + 5) == 47;
-=====
-Output:
-true
-
----- interpreter::tests::interpret_strconcat stdout ----
-===== test: interpret_strconcat =====
-[src/interpreter.rs:558:9]
-Input:
-print "hello" + " world";
-=====
-Output:
-hello world
-
----- loxclass::tests::thing stdout ----
-===== test: thing =====
-[src/loxclass.rs:239:9]
-Input:
-class Thing {
-  getCallback() {
-    fun localFunction() {
-      print this;
-    }
-
-    return localFunction;
-  }
-}
-
-var callback = Thing().getCallback();
-callback();
-=====
-Output:
-Thing instance
 
 ---- interpreter::tests::interpret_fib stdout ----
 ===== test: interpret_fib =====
-[src/interpreter.rs:584:9]
+[src/interpreter.rs:587:9]
 Input:
 var a = 0;
 var temp;
@@ -370,6 +315,142 @@ Output:
 4181
 6765
 
+---- interpreter::tests::interpret_eq stdout ----
+===== test: interpret_eq =====
+[src/interpreter.rs:535:9]
+Input:
+print (42 + 5) == 47;
+=====
+Output:
+true
+
+---- interpreter::tests::interpret_cstylefor stdout ----
+===== test: interpret_cstylefor =====
+[src/interpreter.rs:690:9]
+Input:
+for (var i = 0; i < 10; i = i + 1) print i;=====
+Output:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+---- interpreter::tests::interpret_math stdout ----
+===== test: interpret_math =====
+[src/interpreter.rs:509:9]
+Input:
+print 34.56 * 3 - 21 / 2 + 54.23 - 90;
+=====
+Output:
+57.41
+
+---- interpreter::tests::interpret_truthiness stdout ----
+===== test: interpret_cstylefor =====
+[src/interpreter.rs:728:9]
+Input:
+print "hi" or 2;
+print nil or "yes";
+=====
+Output:
+hi
+yes
+
+---- interpreter::tests::resolver stdout ----
+===== test: resolver =====
+[src/interpreter.rs:944:9]
+Input:
+var a = "global";
+{
+  fun showA() { print a; }
+  showA();
+  var a = "block";
+  showA();
+}
+=====
+Output:
+global
+global
+
+---- interpreter::tests::function_sayhi stdout ----
+===== test: function_sayhi =====
+[src/interpreter.rs:816:9]
+Input:
+fun sayHi(first, last) {
+    print "Hi, " + first + " " + last + "!";
+}
+sayHi("Dear", "Reader");
+=====
+Output:
+Hi, Dear Reader!
+
+---- loxclass::tests::bacon stdout ----
+===== test: bacon =====
+[src/loxclass.rs:133:9]
+Input:
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+
+Bacon().eat(); // Prints "Crunch crunch crunch!".
+=====
+Output:
+Crunch crunch crunch!
+
+---- interpreter::tests::interpret_while stdout ----
+===== test: interpret_while =====
+[src/interpreter.rs:644:9]
+Input:
+{
+    var i = 0;
+    while (i < 10) {
+        print i;
+        i = i + 1;
+    }
+}
+=====
+Output:
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+
+---- loxclass::tests::boston_cream stdout ----
+===== test: boston_cream =====
+[src/loxclass.rs:426:9]
+Input:
+class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonCream < Doughnut {
+  cook() {
+    super.cook();
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
+
+BostonCream().cook();
+=====
+Output:
+Fry until golden brown.
+Pipe full of custard and coat with chocolate.
+
 ---- loxclass::tests::abc stdout ----
 ===== test: abc =====
 [src/loxclass.rs:467:9]
@@ -397,6 +478,40 @@ C().test();
 Output:
 A method
 
+---- loxclass::tests::cake stdout ----
+===== test: cake =====
+[src/loxclass.rs:202:9]
+Input:
+class Cake {
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
+  }
+}
+
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste(); // Prints "The German chocolate cake is delicious!".
+=====
+Output:
+The German chocolate cake is delicious!
+
+---- loxclass::tests::egotist stdout ----
+===== test: egotist =====
+[src/loxclass.rs:167:9]
+Input:
+class Egotist {
+  speak() {
+    print this;
+  }
+}
+
+var method = Egotist().speak;
+method();
+=====
+Output:
+Egotist instance
+
 ---- loxclass::tests::devonshire_cream stdout ----
 ===== test: devonshire_cream =====
 [src/loxclass.rs:69:9]
@@ -411,6 +526,36 @@ print DevonshireCream; // Prints "DevonshireCream".
 =====
 Output:
 DevonshireCream
+
+---- loxclass::tests::class_reference stdout ----
+===== test: class_reference =====
+[src/loxclass.rs:545:9]
+Input:
+class Box {}
+var a = Box();
+var b = a;
+b.x = 1;
+print a.x;
+=====
+Output:
+1
+
+---- loxclass::tests::box_class stdout ----
+===== test: box_class =====
+[src/loxclass.rs:319:9]
+Input:
+class Box {}
+
+fun notMethod(argument) {
+  print "called function with " + argument;
+}
+
+var box = Box();
+box.function = notMethod;
+box.function("argument");
+=====
+Output:
+called function with argument
 
 ---- loxclass::tests::foo_class stdout ----
 ===== test: foo_class =====
@@ -430,82 +575,19 @@ Foo instance
 Foo instance
 Foo instance
 
----- loxclass::tests::egotist stdout ----
-===== test: egotist =====
-[src/loxclass.rs:167:9]
+---- loxclass::tests::triple_inheritance stdout ----
+===== test: triple_inheritance =====
+[src/loxclass.rs:577:9]
 Input:
-class Egotist {
-  speak() {
-    print this;
-  }
-}
-
-var method = Egotist().speak;
-method();
+class A { say() { print "A"; } }
+class B < A { say() { super.say(); print "B"; } }
+class C < B { say() { super.say(); print "C"; } }
+C().say();
 =====
 Output:
-Egotist instance
-
----- interpreter::tests::interpret_truthiness stdout ----
-===== test: interpret_cstylefor =====
-[src/interpreter.rs:725:9]
-Input:
-print "hi" or 2;
-print nil or "yes";
-=====
-Output:
-hi
-yes
-
----- parser::tests::parse_math stdout ----
-===== test: parse_math =====
-[src/parser.rs:469:9]
-Input:
-12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;
-=====
-Output: (+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))
-
----- parser::tests::parse_logic stdout ----
-===== test: parse_logic =====
-[src/parser.rs:497:9]
-Input:
-true != false == ( true == false );
-=====
-Output: (== (!= true false) (group (== true false)))
-
----- loxclass::tests::bagel stdout ----
-===== test: bagel =====
-[src/loxclass.rs:103:9]
-Input:
-class Bagel {}
-var bagel = Bagel();
-print bagel; // Prints "Bagel instance".
-=====
-Output:
-Bagel instance
-
----- parser::tests::parse_unary stdout ----
-===== test: parse_unary =====
-[src/parser.rs:441:9]
-Input:
-!true == -97 + 38;
-=====
-Output: (== (! true) (+ (- 97) 38))
-
----- loxclass::tests::bacon stdout ----
-===== test: bacon =====
-[src/loxclass.rs:133:9]
-Input:
-class Bacon {
-  eat() {
-    print "Crunch crunch crunch!";
-  }
-}
-
-Bacon().eat(); // Prints "Crunch crunch crunch!".
-=====
-Output:
-Crunch crunch crunch!
+A
+B
+C
 
 ---- loxclass::tests::doughnut stdout ----
 ===== test: doughnut =====
@@ -524,109 +606,63 @@ BostonCream().cook();
 Output:
 Fry until golden brown.
 
----- scanner::tests::scan_math stdout ----
-===== test: scan_math =====
-[src/scanner.rs:220:9]
+---- parser::tests::parse_unary stdout ----
+===== test: parse_unary =====
+[src/parser.rs:441:9]
 Input:
-a + b; b - c; c / d; d * e;
+!true == -97 + 38;
+=====
+Output: (== (! true) (+ (- 97) 38))
+
+---- interpreter::tests::interpret_strconcat stdout ----
+===== test: interpret_strconcat =====
+[src/interpreter.rs:561:9]
+Input:
+print "hello" + " world";
+=====
+Output:
+hello world
+
+---- loxclass::tests::person stdout ----
+===== test: person =====
+[src/loxclass.rs:278:9]
+Input:
+class Person {
+  sayName() {
+    print this.name;
+  }
+}
+
+var jane = Person();
+jane.name = "Jane";
+
+var bill = Person();
+bill.name = "Bill";
+
+bill.sayName = jane.sayName;
+bill.sayName(); // ?
+=====
+Output:
+Jane
+
+---- loxclass::tests::bagel stdout ----
+===== test: bagel =====
+[src/loxclass.rs:103:9]
+Input:
+class Bagel {}
+var bagel = Bagel();
+print bagel; // Prints "Bagel instance".
+=====
+Output:
+Bagel instance
+
+---- scanner::tests::scan_comment stdout ----
+===== test: scan_comment =====
+[src/scanner.rs:253:9]
+Input:
+// this is a comment
 =====
 Output: [
-    Token {
-        kind: Identifier,
-        lexeme: "a",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Plus,
-        lexeme: "+",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "b",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "b",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Minus,
-        lexeme: "-",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "c",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "c",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Slash,
-        lexeme: "/",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "d",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "d",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Star,
-        lexeme: "*",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Identifier,
-        lexeme: "e",
-        literal: None,
-        line: 1,
-    },
-    Token {
-        kind: Semicolon,
-        lexeme: ";",
-        literal: None,
-        line: 1,
-    },
     Token {
         kind: Eof,
         lexeme: "",
@@ -634,6 +670,33 @@ Output: [
         line: 1,
     },
 ]
+
+---- resolver::tests::env_redefinition stdout ----
+===== test: env_redefinition =====
+[src/resolver.rs:253:9]
+Input:
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA();
+  var a = "block";
+  showA();
+}
+=====
+Output:
+global
+global
+
+---- parser::tests::parse_math stdout ----
+===== test: parse_math =====
+[src/parser.rs:469:9]
+Input:
+12 * 34 - 89 + 56 / 75 - 65 + 45 * 90;
+=====
+Output: (+ (- (+ (- (* 12 34) 89) (/ 56 75)) 65) (* 45 90))
 
 ---- scanner::tests::scan_multichar_tokens stdout ----
 ===== test: scan_multichar_tokens =====
@@ -746,20 +809,13 @@ Output: [
     },
 ]
 
----- scanner::tests::scan_comment stdout ----
-===== test: scan_comment =====
-[src/scanner.rs:253:9]
+---- parser::tests::parse_logic stdout ----
+===== test: parse_logic =====
+[src/parser.rs:497:9]
 Input:
-// this is a comment
+true != false == ( true == false );
 =====
-Output: [
-    Token {
-        kind: Eof,
-        lexeme: "",
-        literal: None,
-        line: 1,
-    },
-]
+Output: (== (!= true false) (group (== true false)))
 
 ---- scanner::tests::scan_string stdout ----
 ===== test: scan_string =====
@@ -809,30 +865,6 @@ Output: [
         line: 1,
     },
 ]
-
----- interpreter::tests::interpret_while stdout ----
-===== test: interpret_while =====
-[src/interpreter.rs:641:9]
-Input:
-{
-    var i = 0;
-    while (i < 10) {
-        print i;
-        i = i + 1;
-    }
-}
-=====
-Output:
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
 
 ---- scanner::tests::scan_loop stdout ----
 ===== test: scan_loop =====
@@ -995,108 +1027,153 @@ Output: [
     },
 ]
 
----- loxclass::tests::person stdout ----
-===== test: person =====
-[src/loxclass.rs:278:9]
+---- loxclass::tests::ann stdout ----
+===== test: ann =====
+[src/loxclass.rs:513:9]
 Input:
 class Person {
-  sayName() {
-    print this.name;
-  }
+  init(name) { this.name = name; }
+  greet() { print "Hi, " + this.name; }
 }
-
-var jane = Person();
-jane.name = "Jane";
-
-var bill = Person();
-bill.name = "Bill";
-
-bill.sayName = jane.sayName;
-bill.sayName(); // ?
+Person("Ann").greet();
 =====
 Output:
-Jane
+Hi, Ann
 
----- loxclass::tests::box_class stdout ----
-===== test: box_class =====
-[src/loxclass.rs:319:9]
+---- loxclass::tests::thing stdout ----
+===== test: thing =====
+[src/loxclass.rs:239:9]
 Input:
-class Box {}
+class Thing {
+  getCallback() {
+    fun localFunction() {
+      print this;
+    }
 
-fun notMethod(argument) {
-  print "called function with " + argument;
+    return localFunction;
+  }
 }
 
-var box = Box();
-box.function = notMethod;
-box.function("argument");
+var callback = Thing().getCallback();
+callback();
 =====
 Output:
-called function with argument
+Thing instance
 
----- loxclass::tests::boston_cream stdout ----
-===== test: boston_cream =====
-[src/loxclass.rs:426:9]
+---- scanner::tests::scan_math stdout ----
+===== test: scan_math =====
+[src/scanner.rs:220:9]
 Input:
-class Doughnut {
-  cook() {
-    print "Fry until golden brown.";
-  }
-}
-
-class BostonCream < Doughnut {
-  cook() {
-    super.cook();
-    print "Pipe full of custard and coat with chocolate.";
-  }
-}
-
-BostonCream().cook();
+a + b; b - c; c / d; d * e;
 =====
-Output:
-Fry until golden brown.
-Pipe full of custard and coat with chocolate.
-
----- loxclass::tests::cake stdout ----
-===== test: cake =====
-[src/loxclass.rs:202:9]
-Input:
-class Cake {
-  taste() {
-    var adjective = "delicious";
-    print "The " + this.flavor + " cake is " + adjective + "!";
-  }
-}
-
-var cake = Cake();
-cake.flavor = "German chocolate";
-cake.taste(); // Prints "The German chocolate cake is delicious!".
-=====
-Output:
-The German chocolate cake is delicious!
-
----- resolver::tests::env_redefinition stdout ----
-===== test: env_redefinition =====
-[src/resolver.rs:253:9]
-Input:
-var a = "global";
-{
-  fun showA() {
-    print a;
-  }
-
-  showA();
-  var a = "block";
-  showA();
-}
-=====
-Output:
-global
-global
+Output: [
+    Token {
+        kind: Identifier,
+        lexeme: "a",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Plus,
+        lexeme: "+",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "b",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Minus,
+        lexeme: "-",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "c",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Slash,
+        lexeme: "/",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "d",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Star,
+        lexeme: "*",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Identifier,
+        lexeme: "e",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Semicolon,
+        lexeme: ";",
+        literal: None,
+        line: 1,
+    },
+    Token {
+        kind: Eof,
+        lexeme: "",
+        literal: None,
+        line: 1,
+    },
+]
 
 ---- interpreter::tests::function_fib stdout ----
 ===== test: function_fib =====
-[src/interpreter.rs:844:9]
+[src/interpreter.rs:847:9]
 Input:
 fun fib(n) {
     if (n <= 1) return n;
@@ -1138,6 +1215,7 @@ successes:
     environment::tests::env_simple_enclosing
     expr::tests::ast_example
     expr::tests::ast_simple
+    interpreter::tests::early_return
     interpreter::tests::function_add
     interpreter::tests::function_add_print
     interpreter::tests::function_counter
@@ -1150,18 +1228,22 @@ successes:
     interpreter::tests::interpret_strconcat
     interpreter::tests::interpret_truthiness
     interpreter::tests::interpret_while
+    interpreter::tests::resolver
     loxclass::tests::abc
+    loxclass::tests::ann
     loxclass::tests::bacon
     loxclass::tests::bagel
     loxclass::tests::boston_cream
     loxclass::tests::box_class
     loxclass::tests::cake
+    loxclass::tests::class_reference
     loxclass::tests::devonshire_cream
     loxclass::tests::doughnut
     loxclass::tests::egotist
     loxclass::tests::foo_class
     loxclass::tests::person
     loxclass::tests::thing
+    loxclass::tests::triple_inheritance
     parser::tests::parse_logic
     parser::tests::parse_math
     parser::tests::parse_unary
@@ -1172,7 +1254,7 @@ successes:
     scanner::tests::scan_multichar_tokens
     scanner::tests::scan_string
 
-test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
 
 
 running 0 tests
