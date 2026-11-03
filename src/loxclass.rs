@@ -601,4 +601,38 @@ C().say();
         assert_eq!("A\nB\nC\n", interpreter.result);
         Ok(())
     }
+
+    #[test]
+    fn multiple_inheritance() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: multiple_inheritance =====");
+        dbg!();
+        let source_string = String::from(
+"class A { say() { print \"A\"; } }
+class B < A { say() { super.say(); print \"B\"; } }
+class C < B { say() { super.say(); print \"C\"; } }
+C().say();
+print \"D:\";
+class D < A { wow() { super.say(); print \"WOW\"; } }
+D().wow();
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("A\nB\nC\nD:\nA\nWOW\n", interpreter.result);
+        Ok(())
+    }
 }

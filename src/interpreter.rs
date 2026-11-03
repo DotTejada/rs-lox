@@ -977,14 +977,14 @@ counter();
         println!("===== test: early_return =====");
         dbg!();
         let source_string = String::from(
-"fun firstSquareOver(limit) {
+"fun first_square_over(limit) {
   var i = 0;
   while (true) {
     if (i * i > limit) return i;
     i = i + 1;
   }
 }
-print firstSquareOver(50);
+print first_square_over(50);
 ");
         println!("Input:\n{}=====\nOutput:", source_string);
         let source: Vec<char> = source_string.chars().collect();
@@ -1004,6 +1004,154 @@ print firstSquareOver(50);
         interpreter.interpret(expression)?;
 
         assert_eq!("8\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn advanced_truthy() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: advanced_truthy =====");
+        dbg!();
+        let source_string = String::from(
+"print \"hi\" or 2;
+print nil or \"yes\";
+print nil and undefinedFn();
+print 0 and \"zero is truthy\";
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("hi\nyes\nnil\nzero is truthy\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn display_trait() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: display_trait =====");
+        dbg!();
+        let source_string = String::from(
+"class Foo {}
+fun bar() {}
+print Foo;
+print Foo();
+print bar;
+print clock;
+print 1 == 1;
+print \"a\" + \"b\";
+print nil;
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("Foo\nFoo instance\n<fn bar>\n<native fn>\ntrue\nab\nnil\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn method_shadowing() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: method_shadowing =====");
+        dbg!();
+        let source_string = String::from(
+"class A {
+  name() { return \"method\"; }
+}
+var a = A();
+print a.name();
+a.name = \"field\";
+print a.name;
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("method\nfield\n", interpreter.result);
+        Ok(())
+    }
+
+    #[test]
+    fn primes() -> Result<(), Box<dyn std::error::Error>> {
+        println!("===== test: primes =====");
+        dbg!();
+        let source_string = String::from(
+"fun mod(a, b) {
+  while (a >= b) a = a - b;
+  return a;
+}
+
+fun is_prime(x) {
+  if (x < 2) return false;
+  for (var d = 2; d * d <= x; d = d + 1) {
+    if (mod(x, d) == 0) return false;
+  }
+  return true;
+}
+
+fun primes_up_to(n) {
+  for (var i = 2; i <= n; i = i + 1) {
+    if (is_prime(i)) print i;
+  }
+}
+
+primes_up_to(30);
+");
+        println!("Input:\n{}=====\nOutput:", source_string);
+        let source: Vec<char> = source_string.chars().collect();
+        
+        let scanner: Scanner = Scanner::new(source);
+        let tokens: Vec<Token> = scanner.scan_tokens()?;
+        let mut parser: Parser = Parser::new(tokens);
+        let expression = parser.parse()?;
+        let mut interpreter: Interpreter = Interpreter::new();
+
+        let mut resolver: Resolver = Resolver::new(&mut interpreter);
+        resolver.resolve_stmts(&expression);
+        if resolver.had_error {
+            return Ok(());
+        }
+
+        interpreter.interpret(expression)?;
+
+        assert_eq!("2\n3\n5\n7\n11\n13\n17\n19\n23\n29\n", interpreter.result);
         Ok(())
     }
 }
