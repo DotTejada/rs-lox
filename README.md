@@ -8,9 +8,11 @@ The src/ directory contains the source files for the project
 
 The target/ directory contains files rust uses for building and running
 
-Tests are located in the associated files, so tests for the scanner are in scanner.rs
+Tests are roughly located in the associated files, so tests for the scanner are in scanner.rs, etc.
 
 Tests have already been run and their output stored in testing.log
+
+They range from simple proof of a feature working to more complex programs that test many features and inner workings of the interpreter.
 
 ## Installation and Running
 
